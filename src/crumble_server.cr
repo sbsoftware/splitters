@@ -1,7 +1,7 @@
 require "crumble"
-require "./models/*"
+# require "./models/*"
 require "./views/*"
 require "./resources/*"
-require "./styles/*"
+# require "./styles/*"
 
 Crumble::Server.start
