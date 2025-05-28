@@ -1,0 +1,78 @@
+version: 2.0
+shards:
+  crumble:
+    git: https://github.com/sbsoftware/crumble.git
+    version: 0.21.2
+
+  crumble-stimulus:
+    git: https://github.com/sbsoftware/crumble-stimulus.git
+    version: 0.3.1
+
+  crumble-turbo:
+    git: https://github.com/sbsoftware/crumble-turbo.git
+    version: 0.10.0
+
+  csuuid:
+    git: https://github.com/wyhaines/csuuid.cr.git
+    version: 1.0.2
+
+  db:
+    git: https://github.com/crystal-lang/crystal-db.git
+    version: 0.13.1
+
+  debug:
+    git: https://github.com/sija/debug.cr.git
+    version: 2.0.4
+
+  js:
+    git: https://github.com/sbsoftware/js.cr.git
+    version: 1.4.0
+
+  nbchannel:
+    git: https://github.com/wyhaines/nbchannel.cr.git
+    version: 0.1.0
+
+  opentelemetry-api:
+    git: https://github.com/wyhaines/opentelemetry-api.cr.git
+    version: 0.5.1
+
+  opentelemetry-sdk:
+    git: https://github.com/wyhaines/opentelemetry-sdk.cr.git
+    version: 0.6.2
+
+  orma:
+    git: https://github.com/sbsoftware/orma.git
+    version: 0.8.0
+
+  parse_date:
+    git: https://github.com/wyhaines/parsedate.cr.git
+    version: 0.1.2
+
+  protobuf:
+    git: https://github.com/jeromegn/protobuf.cr.git
+    version: 2.3.1
+
+  retriable:
+    git: https://github.com/sija/retriable.cr.git
+    version: 0.2.5
+
+  splay_tree_map:
+    git: https://github.com/wyhaines/splay_tree_map.cr.git
+    version: 0.3.0
+
+  sqlite3:
+    git: https://github.com/crystal-lang/crystal-sqlite3.git
+    version: 0.21.0
+
+  stimulus:
+    git: https://github.com/sbsoftware/stimulus.cr.git
+    version: 0.6.0
+
+  time-ext:
+    git: https://github.com/wyhaines/time-ext.cr.git
+    version: 1.0.1
+
+  to_html:
+    git: https://github.com/sbsoftware/to_html.cr.git
+    version: 1.4.0
+
