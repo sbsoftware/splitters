@@ -1,0 +1,13 @@
+name: splitters
+version: 0.1.0
+
+authors:
+  - Stefan Bilharz <stefan@sbsoftware.de>
+
+targets:
+  splitters:
+    main: src/splitters.cr
+
+crystal: '>= 1.16.0'
+
+license: MIT
