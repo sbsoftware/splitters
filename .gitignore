@@ -5,3 +5,5 @@
 *.dwarf
 
 .deploy.yml
+data.db
+tmp/
