@@ -1,2 +1,5 @@
-class ApplicationLayout < ToHtml::Layout
+class ApplicationLayout < Crumble::Material::Layout
+  def headline
+    "Splitters"
+  end
 end

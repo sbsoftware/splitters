@@ -4,6 +4,10 @@ shards:
     git: https://github.com/sbsoftware/crumble.git
     version: 0.21.2
 
+  crumble-material:
+    git: https://github.com/sbsoftware/crumble-material.git
+    version: 0.3.0
+
   crumble-stimulus:
     git: https://github.com/sbsoftware/crumble-stimulus.git
     version: 0.3.1

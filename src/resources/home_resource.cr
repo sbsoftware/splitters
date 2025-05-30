@@ -1,4 +1,4 @@
-class HomeResource < Crumble::Resource
+class HomeResource < ApplicationResource
   def self.root_path
     "/"
   end

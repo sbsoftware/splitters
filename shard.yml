@@ -15,3 +15,5 @@ license: MIT
 dependencies:
   crumble-turbo:
     github: sbsoftware/crumble-turbo
+  crumble-material:
+    github: sbsoftware/crumble-material
