@@ -1,8 +1,12 @@
+require "sqlite3"
 require "crumble"
 require "crumble-material"
-# require "./models/*"
+require "crumble-turbo"
+require "./ext/**"
+require "./macros"
+require "./models/*"
+require "./styles/*"
 require "./views/*"
 require "./resources/*"
-# require "./styles/*"
 
 Crumble::Server.start
