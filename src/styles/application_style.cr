@@ -3,5 +3,10 @@ class ApplicationStyle < CSS::Stylesheet
     rule body, button do
       fontFamily "Roboto"
     end
+
+    rule a do
+      color Black
+      textDecoration None
+    end
   end
 end
