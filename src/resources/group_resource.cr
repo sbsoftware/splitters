@@ -12,7 +12,7 @@ class GroupResource < ApplicationResource
     end
 
     group = Group.create(name: "Neue Gruppe")
-    GroupMember.create(group_id: group.id, user_id: user.id)
+    GroupMembership.create(group_id: group.id, user_id: user.id)
 
     redirect self.class.uri_path(group.id)
   end
@@ -24,8 +24,8 @@ class GroupResource < ApplicationResource
     end
 
     group = Group.find(id)
-    if group_member = group.group_members.find { |gm| gm.user_id == user.id }
-      render GroupView.new(group_member)
+    if group_membership = group.group_memberships.find { |gm| gm.user_id == user.id }
+      render GroupView.new(group_membership)
     else
       redirect HomeResource.uri_path
     end

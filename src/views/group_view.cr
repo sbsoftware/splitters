@@ -1,5 +1,5 @@
 class GroupView
-  getter group_member : GroupMember
+  getter group_member : GroupMembership
 
   def initialize(@group_member); end
 
