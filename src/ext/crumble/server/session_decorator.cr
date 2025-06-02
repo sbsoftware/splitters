@@ -4,7 +4,7 @@ module Crumble
       def user
         return unless user_id = self.user_id
 
-        User.find(user_id)
+        User.where({"id" => user_id}).first?
       end
     end
   end
