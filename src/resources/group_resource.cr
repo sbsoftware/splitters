@@ -11,7 +11,7 @@ class GroupResource < ApplicationResource
       ctx.session.update!(user_id: user.id.value)
     end
 
-    group = Group.create(name: "Neue Gruppe")
+    group = Group.create(name: "Neue Gruppe", access_token: Random::Secure.base64(9))
     GroupMembership.create(group_id: group.id, user_id: user.id)
 
     redirect self.class.uri_path(group.id)
