@@ -1,6 +1,6 @@
 class ApplicationStyle < CSS::Stylesheet
   rules do
-    rule body, button do
+    rule body, button, input do
       fontFamily "Roboto"
     end
 

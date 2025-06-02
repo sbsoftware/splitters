@@ -1,9 +1,9 @@
 class GroupView
-  getter group_member : GroupMembership
+  getter group_membership : GroupMembership
 
-  def initialize(@group_member); end
+  def initialize(@group_membership); end
 
-  delegate :group, to: group_member
+  delegate :group, to: group_membership
 
   class BackLink
     ToHtml.class_template do
@@ -23,5 +23,6 @@ class GroupView
 
   ToHtml.instance_template do
     top_app_bar
+    group_membership.set_name_form
   end
 end
