@@ -8,5 +8,9 @@ class ApplicationStyle < CSS::Stylesheet
       color Black
       textDecoration None
     end
+
+    rule "[data-action]" do
+      prop("cursor", "pointer")
+    end
   end
 end
