@@ -6,7 +6,7 @@ require "./ext/**"
 require "./macros"
 require "./models/*"
 require "./styles/*"
-require "./views/*"
+require "./views/**"
 require "./resources/*"
 
 Crumble::Server.start

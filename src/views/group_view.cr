@@ -35,11 +35,19 @@ class GroupView
     end
   end
 
+  record MembersLink, group : Group do
+    ToHtml.instance_template do
+      a href: GroupMembersResource.uri_path(group.id) do
+        Crumble::Material::Icon.new("group")
+      end
+    end
+  end
+
   def top_app_bar
     Crumble::Material::TopAppBar.new(
       leading_icon: BackLink,
       headline: group.name,
-      trailing_icons: [ShareLink.new(group)]
+      trailing_icons: [ShareLink.new(group), MembersLink.new(group)]
     )
   end
 
