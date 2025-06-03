@@ -6,6 +6,7 @@ require "./ext/**"
 require "./macros"
 require "./models/*"
 require "./styles/*"
+require "./js/**"
 require "./views/**"
 require "./resources/*"
 
