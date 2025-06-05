@@ -76,12 +76,7 @@ class GroupMembership < ApplicationRecord
         end
 
         rule Input do
-          prop("border", "none")
-          prop("border-bottom", "1px solid black")
-          backgroundColor "#EEE"
           width 100.percent
-          padding 8.px
-          prop("box-sizing", "border-box")
         end
 
         rule ButtonRow do
