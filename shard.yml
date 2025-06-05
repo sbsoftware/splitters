@@ -17,3 +17,5 @@ dependencies:
     github: sbsoftware/crumble-turbo
   crumble-material:
     github: sbsoftware/crumble-material
+  base58:
+    github: wyhaines/base58.cr

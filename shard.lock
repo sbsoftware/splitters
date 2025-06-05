@@ -1,5 +1,9 @@
 version: 2.0
 shards:
+  base58:
+    git: https://github.com/wyhaines/base58.cr.git
+    version: 0.2.2
+
   crumble:
     git: https://github.com/sbsoftware/crumble.git
     version: 0.21.2

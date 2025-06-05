@@ -1,3 +1,5 @@
+require "base58"
+
 class GroupResource < ApplicationResource
   layout ApplicationLayout do
     def top_app_bar
@@ -11,7 +13,7 @@ class GroupResource < ApplicationResource
       ctx.session.update!(user_id: user.id.value)
     end
 
-    group = Group.create(name: "Neue Gruppe", access_token: Random::Secure.base64(9))
+    group = Group.create(name: "Neue Gruppe", access_token: Base58.encode(Random::Secure.random_bytes(9)))
     GroupMembership.create(group_id: group.id, user_id: user.id)
 
     redirect self.class.uri_path(group.id)
