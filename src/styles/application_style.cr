@@ -9,7 +9,7 @@ class ApplicationStyle < CSS::Stylesheet
       textDecoration None
     end
 
-    rule "[data-action]" do
+    rule "[data-action]:not(input)" do
       prop("cursor", "pointer")
     end
 
