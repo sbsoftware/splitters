@@ -5,6 +5,7 @@ class GroupMembership < ApplicationRecord
   column group_id : Int64
   column user_id : Int64
   column name : String?
+  column weight : Int32 = 10
 
   def group
     Group.find(group_id)
@@ -100,5 +101,62 @@ class GroupMembership < ApplicationRecord
 
   model_template :set_name_form do
     set_name_action_template.to_html unless name
+  end
+
+  model_action :set_weight, set_weight_form do
+    WEIGHT_FIELD = "weight"
+
+    controller do
+      unless body = ctx.request.body
+        ctx.response.status = :bad_request
+        return
+      end
+
+      weight = nil
+      HTTP::Params.parse(body.gets_to_end) do |key, value|
+        case key
+        when WEIGHT_FIELD
+          weight = (value.to_f * 10).to_i
+        end
+      rescue Exception
+        weight = nil
+      end
+
+      model.update(weight: weight) if weight && weight.positive?
+    end
+
+    record Template, uri_path : String, group_membership : GroupMembership do
+      css_class Hidden
+
+      stimulus_controller UpdateController do
+        targets :submit
+
+        action :update do
+          this.submitTarget.click._call
+        end
+      end
+
+      ToHtml.instance_template do
+        form UpdateController, action: uri_path, method: "POST" do
+          input UpdateController.update_action("change"), type: :number, name: WEIGHT_FIELD, value: group_membership.weight / 10.0, step: "0.1"
+          "x"
+          button Hidden, UpdateController.submit_target
+        end
+      end
+
+      style do
+        rule Hidden do
+          display None
+        end
+      end
+    end
+
+    def self.action_template(model)
+      Template.new(uri_path(model.id), model)
+    end
+  end
+
+  model_template :set_weight_form do
+    set_weight_action_template.to_html
   end
 end

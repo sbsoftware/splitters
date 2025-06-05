@@ -15,6 +15,8 @@ module Groups
     end
 
     css_class Member
+    css_class Name
+    css_class Weight
 
     ToHtml.instance_template do
       Crumble::Material::TopAppBar.new(
@@ -27,12 +29,17 @@ module Groups
         Crumble::Material::ListItem.to_html do
           div Member do
             Crumble::Material::Icon.new("account_circle")
-            if name = group_membership.name
-              name
-            else
-              i do
-                "Anonym"
+            span Name do
+              if name = group_membership.name
+                name
+              else
+                i do
+                  "Anonym"
+                end
               end
+            end
+            span Weight do
+              group_membership.set_weight_form
             end
           end
         end
@@ -43,6 +50,15 @@ module Groups
       rule Member do
         display Flex
         prop("gap", 8.px)
+      end
+
+      rule Name do
+        flexGrow 2
+      end
+
+      rule Weight >> input do
+        width 55.px
+        prop("vertical-align", "middle")
       end
     end
   end
