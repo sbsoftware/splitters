@@ -19,4 +19,10 @@ style ApplicationStyle do
     padding 8.px
     box_sizing :border_box
   end
+
+  rule button do
+    border :none
+    outline :none
+    background_color :transparent
+  end
 end

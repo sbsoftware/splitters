@@ -39,8 +39,23 @@ class GroupView
     )
   end
 
+  css_class Container
+
   ToHtml.instance_template do
     top_app_bar
-    group_membership.set_name_form.renderer(ctx)
+    div Container do
+      group_membership.set_name_form.renderer(ctx)
+      group.create_expense_action_template(ctx)
+      group.expenses_view.renderer(ctx)
+    end
+  end
+
+  style do
+    rule Container do
+      padding 16.px
+      box_sizing :border_box
+      border_top 1.px, :solid, :silver
+      border_bottom 1.px, :solid, :silver
+    end
   end
 end

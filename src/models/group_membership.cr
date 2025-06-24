@@ -42,7 +42,6 @@ class GroupMembership < ApplicationRecord
       css_class Caption
       css_class Input
       css_class ButtonRow
-      css_class Button
 
       template do
         div Container do
@@ -52,7 +51,7 @@ class GroupMembership < ApplicationRecord
           form action: action.uri_path, method: "POST" do
             input Input, type: :text, name: NAME_FIELD, required: true
             div ButtonRow do
-              button Button do
+              button do
                 "Speichern"
               end
             end
@@ -80,12 +79,6 @@ class GroupMembership < ApplicationRecord
           margin_top 16.px
           display :flex
           justify_content :flex_end
-        end
-
-        rule Button do
-          border :none
-          outline :none
-          background_color :transparent
         end
       end
     end
