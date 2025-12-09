@@ -8,7 +8,7 @@ class ServiceWorker < JS::Code
   def_to_js do
     cacheName = "einkaufslisteApp"
     cachedResources = [] of String
-    cachedResources.push(RobotoRegular.uri_path.to_js_ref)
+    cachedResources.push(Crumble::Material::RobotoRegular.uri_path.to_js_ref)
     cachedResources.push(Crumble::Material::Icon::Font.uri_path.to_js_ref)
 
     self.addEventListener("install") do |event|
