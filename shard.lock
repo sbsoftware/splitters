@@ -6,19 +6,27 @@ shards:
 
   crumble:
     git: https://github.com/sbsoftware/crumble.git
-    version: 0.21.2
+    version: 0.26.0
 
   crumble-material:
     git: https://github.com/sbsoftware/crumble-material.git
-    version: 0.3.0
+    version: 0.4.0
+
+  crumble-orma:
+    git: https://github.com/sbsoftware/crumble-orma.git
+    version: 0.2.0
 
   crumble-stimulus:
     git: https://github.com/sbsoftware/crumble-stimulus.git
-    version: 0.3.1
+    version: 0.3.2
 
   crumble-turbo:
     git: https://github.com/sbsoftware/crumble-turbo.git
-    version: 0.10.0
+    version: 0.14.0
+
+  css:
+    git: https://github.com/sbsoftware/css.cr.git
+    version: 0.2.0
 
   csuuid:
     git: https://github.com/wyhaines/csuuid.cr.git
@@ -26,7 +34,7 @@ shards:
 
   db:
     git: https://github.com/crystal-lang/crystal-db.git
-    version: 0.13.1
+    version: 0.14.0
 
   debug:
     git: https://github.com/sija/debug.cr.git
@@ -34,7 +42,7 @@ shards:
 
   js:
     git: https://github.com/sbsoftware/js.cr.git
-    version: 1.4.0
+    version: 1.5.0
 
   nbchannel:
     git: https://github.com/wyhaines/nbchannel.cr.git
@@ -50,7 +58,7 @@ shards:
 
   orma:
     git: https://github.com/sbsoftware/orma.git
-    version: 0.8.0
+    version: 0.10.2
 
   parse_date:
     git: https://github.com/wyhaines/parsedate.cr.git
@@ -70,7 +78,7 @@ shards:
 
   sqlite3:
     git: https://github.com/crystal-lang/crystal-sqlite3.git
-    version: 0.21.0
+    version: 0.22.0
 
   stimulus:
     git: https://github.com/sbsoftware/stimulus.cr.git
@@ -82,5 +90,5 @@ shards:
 
   to_html:
     git: https://github.com/sbsoftware/to_html.cr.git
-    version: 1.4.0
+    version: 1.5.0
 

@@ -75,6 +75,6 @@ class AccessResource < ApplicationResource
   end
 
   def id?
-    self.class.match(@ctx.request.path).try { |m| m[2]? }
+    self.class.match(ctx.request.path).try { |m| m[2]? }
   end
 end
