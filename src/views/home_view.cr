@@ -46,29 +46,29 @@ class HomeView
     end
 
     rule AddGroupButton do
-      display Flex
-      justifyContent Center
-      marginBottom 16.px
+      display :flex
+      justify_content :center
+      margin_bottom 16.px
     end
 
     rule IconButton do
-      display Flex
-      alignItems Center
-      prop("gap", 5.px)
-      backgroundColor White
+      display :flex
+      align_items :center
+      gap 5.px
+      background_color :white
       padding 8.px
-      border 1.px, Solid, Black
-      prop("border-radius", 8.px)
+      border 1.px, :solid, :black
+      border_radius 8.px
     end
 
     rule IconButtonCaption do
-      fontSize 120.percent
+      font_size 120.percent
     end
 
     rule Groups do
-      display Flex
-      flexWrap Wrap
-      prop("gap", 16.px)
+      display :flex
+      flex_wrap :wrap
+      gap 16.px
     end
   end
 end

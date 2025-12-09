@@ -62,14 +62,14 @@ class GroupMembership < ApplicationRecord
 
       style do
         rule Container do
-          prop("margin", "0px auto")
+          margin 0.px, :auto
           padding 16.px
-          maxWidth 600.px
-          border 1.px, Solid, Silver
+          max_width 600.px
+          border 1.px, :solid, :silver
         end
 
         rule Caption do
-          marginBottom 8.px
+          margin_bottom 8.px
         end
 
         rule Input do
@@ -77,15 +77,15 @@ class GroupMembership < ApplicationRecord
         end
 
         rule ButtonRow do
-          marginTop 16.px
-          display Flex
-          justifyContent FlexEnd
+          margin_top 16.px
+          display :flex
+          justify_content :flex_end
         end
 
         rule Button do
-          prop("border", "none")
-          prop("outset", "none")
-          backgroundColor "transparent"
+          border :none
+          outline :none
+          background_color :transparent
         end
       end
     end
@@ -138,7 +138,7 @@ class GroupMembership < ApplicationRecord
 
       style do
         rule Hidden do
-          display None
+          display :none
         end
       end
     end

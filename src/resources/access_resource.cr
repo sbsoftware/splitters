@@ -24,11 +24,11 @@ class AccessResource < ApplicationResource
 
     style do
       rule Container do
-        maxWidth 600.px
-        margin "0px auto"
-        display Flex
-        flexDirection Column
-        alignItems Center
+        max_width 600.px
+        margin 0.px, :auto
+        display :flex
+        flex_direction :column
+        align_items :center
       end
     end
   end

@@ -48,17 +48,19 @@ module Groups
 
     style do
       rule Member do
-        display Flex
-        prop("gap", 8.px)
+        display :flex
+        gap 8.px
       end
 
       rule Name do
-        flexGrow 2
+        flex_grow 2
       end
 
-      rule Weight >> input do
-        width 55.px
-        prop("vertical-align", "middle")
+      rule Weight do
+        rule input do
+          width 55.px
+          vertical_align :middle
+        end
       end
     end
   end
