@@ -37,23 +37,19 @@ class GroupMembership < ApplicationRecord
       model.update(name: new_name) if new_name && new_name.size.positive?
     end
 
-    class Template
-      getter uri_path : String
-
-      def initialize(@uri_path); end
-
+    view do
       css_class Container
       css_class Caption
       css_class Input
       css_class ButtonRow
       css_class Button
 
-      ToHtml.instance_template do
+      template do
         div Container do
           div Caption do
             "Sag' den anderen, wer du bist:"
           end
-          form action: uri_path, method: "POST" do
+          form action: action.uri_path, method: "POST" do
             input Input, type: :text, name: NAME_FIELD, required: true
             div ButtonRow do
               button Button do
@@ -93,14 +89,10 @@ class GroupMembership < ApplicationRecord
         end
       end
     end
-
-    def self.action_template(model)
-      Template.new(uri_path(model.id))
-    end
   end
 
   model_template :set_name_form do
-    set_name_action_template.to_html unless name
+    set_name_action_template(ctx).to_html unless name
   end
 
   model_action :set_weight, set_weight_form do
@@ -125,7 +117,7 @@ class GroupMembership < ApplicationRecord
       model.update(weight: weight) if weight && weight.positive?
     end
 
-    record Template, uri_path : String, group_membership : GroupMembership do
+    view do
       css_class Hidden
 
       stimulus_controller UpdateController do
@@ -136,9 +128,9 @@ class GroupMembership < ApplicationRecord
         end
       end
 
-      ToHtml.instance_template do
-        form UpdateController, action: uri_path, method: "POST" do
-          input UpdateController.update_action("change"), type: :number, name: WEIGHT_FIELD, value: group_membership.weight / 10.0, step: "0.1"
+      template do
+        form UpdateController, action: action.uri_path, method: "POST" do
+          input UpdateController.update_action("change"), type: :number, name: WEIGHT_FIELD, value: model.weight / 10.0, step: "0.1"
           "x"
           button Hidden, UpdateController.submit_target
         end
@@ -150,13 +142,9 @@ class GroupMembership < ApplicationRecord
         end
       end
     end
-
-    def self.action_template(model)
-      Template.new(uri_path(model.id), model)
-    end
   end
 
   model_template :set_weight_form do
-    set_weight_action_template.to_html
+    set_weight_action_template(ctx).to_html
   end
 end

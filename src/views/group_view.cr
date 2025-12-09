@@ -1,7 +1,9 @@
 class GroupView
+  include Crumble::ContextView
+
   getter group_membership : GroupMembership
 
-  def initialize(@group_membership); end
+  def initialize(@ctx, @group_membership); end
 
   delegate :group, to: group_membership
 
@@ -53,6 +55,6 @@ class GroupView
 
   ToHtml.instance_template do
     top_app_bar
-    group_membership.set_name_form
+    group_membership.set_name_form.renderer(ctx)
   end
 end

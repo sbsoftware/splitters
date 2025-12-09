@@ -27,7 +27,7 @@ class GroupResource < ApplicationResource
 
     group = Group.find(id)
     if group_membership = group.group_memberships.find { |gm| gm.user_id == user.id }
-      render GroupView.new(group_membership)
+      render GroupView.new(ctx: ctx, group_membership: group_membership)
     else
       redirect HomeResource.uri_path
     end

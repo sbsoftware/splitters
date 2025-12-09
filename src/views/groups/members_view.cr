@@ -39,7 +39,7 @@ module Groups
               end
             end
             span Weight do
-              group_membership.set_weight_form
+              group_membership.set_weight_form.renderer(ctx)
             end
           end
         end
