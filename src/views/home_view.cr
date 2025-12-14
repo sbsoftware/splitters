@@ -27,14 +27,7 @@ class HomeView
       end
       div Groups do
         groups.each do |group|
-          a href: GroupResource.uri_path(group.id) do
-            Crumble::Material::Card.new.to_html do
-              Crumble::Material::Card::Title.new(group.name)
-              Crumble::Material::Card::SecondaryText.new.to_html do
-                Crumble::Material::Icon.new("account_circle", "#{group.group_memberships.count} Mitglied(er)")
-              end
-            end
-          end
+          group.card.renderer(ctx)
         end
       end
     end
