@@ -45,6 +45,7 @@ class GroupView
     top_app_bar
     div Container do
       group_membership.set_name_form.renderer(ctx)
+      group.expenses_summary_view.renderer(ctx)
       group.create_expense_action_template(ctx)
       group.expenses_view.renderer(ctx)
     end

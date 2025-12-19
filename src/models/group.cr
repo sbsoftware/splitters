@@ -10,6 +10,33 @@ class Group < ApplicationRecord
   has_many_of GroupMembership
   has_many_of Expense
 
+  private def format_euros(amount_cents : Int32) : String
+    (amount_cents.to_f / 100).format(",", ".", decimal_places: 2)
+  end
+
+  def expense_debt_statements : Array(String)
+    memberships = group_memberships.to_a
+    return [] of String if memberships.size < 2
+
+    member_weights = memberships.to_h { |gm| {gm.id.value, gm.weight.value} }
+    expenses_input = expenses.map { |e| {e.group_membership_id.value, e.amount.value} }
+
+    membership_by_id = memberships.to_h { |gm| {gm.id.value, gm} }
+
+    MinimumCashFlow
+      .pairwise_debts(member_weights: member_weights, expenses: expenses_input)
+      .sort_by do |debt|
+        debtor = membership_by_id[debt.debtor_id]
+        creditor = membership_by_id[debt.creditor_id]
+        {debtor.display_name, creditor.display_name}
+      end
+      .map do |debt|
+        debtor = membership_by_id[debt.debtor_id]
+        creditor = membership_by_id[debt.creditor_id]
+        "#{debtor.display_name} schuldet #{creditor.display_name} #{format_euros(debt.amount_cents)}€"
+      end
+  end
+
   model_template :card do
     a href: GroupResource.uri_path(id) do
       Crumble::Material::Card.new.to_html do
@@ -64,7 +91,7 @@ class Group < ApplicationRecord
 
   model_action :create_expense, expenses_view do
     DESCRIPTION_FIELD = "description"
-    AMOUNT_FIELD = "amount"
+    AMOUNT_FIELD      = "amount"
 
     controller do
       unless body = ctx.request.body
@@ -94,6 +121,7 @@ class Group < ApplicationRecord
 
       Expense.create(description: description, amount: amount, group_id: model.id, group_membership_id: group_membership.id)
 
+      model.expenses_summary_view.refresh!
       ctx.response.status = :created
     end
 
@@ -136,14 +164,55 @@ class Group < ApplicationRecord
   end
 
   css_class ExpensesContainer
+  css_class ExpensesSummaryBox
+  css_class ExpensesSummaryLine
 
   style do
+    rule ExpensesSummaryBox do
+      max_width 600.px
+      margin 0.px, :auto
+      margin_bottom 16.px
+      padding 16.px
+      border 1.px, :solid, :silver
+      box_sizing :border_box
+
+      rule h3 do
+        margin_top 0.px
+        margin_bottom 8.px
+      end
+    end
+
+    rule ExpensesSummaryLine do
+      margin 0.px
+    end
+
     rule ExpensesContainer do
       display :flex
       justify_content :flex_start
       flex_wrap :wrap
       gap 20.px
       margin_top 20.px
+    end
+  end
+
+  model_template :expenses_summary_view do
+    div ExpensesSummaryBox do
+      h3 { "Zusammenfassung" }
+
+      if expenses.empty?
+        p { "Noch keine Ausgaben." }
+      else
+        statements = expense_debt_statements
+        if statements.empty?
+          p { "Alle sind ausgeglichen." }
+        else
+          statements.each do |statement|
+            div ExpensesSummaryLine do
+              statement
+            end
+          end
+        end
+      end
     end
   end
 

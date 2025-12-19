@@ -11,6 +11,14 @@ class GroupMembership < ApplicationRecord
     Group.find(group_id)
   end
 
+  def display_name : String
+    if current_name = name
+      current_name.value
+    else
+      "Anonym"
+    end
+  end
+
   model_action :set_name, set_name_form do
     NAME_FIELD = "name"
 
@@ -107,7 +115,10 @@ class GroupMembership < ApplicationRecord
         weight = nil
       end
 
-      model.update(weight: weight) if weight && weight.positive?
+      if weight && weight.positive?
+        model.update(weight: weight)
+        model.group.expenses_summary_view.refresh!
+      end
     end
 
     view do

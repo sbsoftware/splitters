@@ -1,2 +1,2 @@
 require "spec"
-require "../src/splitters"
+require "../src/environment"
