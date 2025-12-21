@@ -15,11 +15,27 @@
 - Run with auto-reload (requires `watchexec`): `./watch.sh`
 - Build a binary: `shards build` (or `shards build --release`)
 - Run tests: `crystal spec`
+- If Crystal can’t write to `~/.cache` in this environment, use `CRYSTAL_CACHE_DIR=./tmp/.crystal-cache` for `shards build` / `crystal spec` and delete it afterwards.
 
 ## Coding Style & Naming Conventions
 - Follow `.editorconfig`: 2-space indentation, LF, final newline, no trailing whitespace.
 - Format before opening a PR: `crystal tool format src spec` (use `crystal tool format --check src spec` to verify).
 - Crystal conventions: `CamelCase` for types/modules; `snake_case` for files, methods, and variables.
+
+## Shards: Turbo / Orma Actions
+- `crumble-turbo` provides `model_template` + `model_action` macros for Orma models; model templates render with a stable DOM id and can be refreshed via Turbo Stream replacement.
+- Refreshing: call `some_template.refresh!` to broadcast a refresh to all connected sessions; the refreshed template must be rendered somewhere (via `some_template.renderer(ctx)`) so it registers with the SSE refresh controller.
+- Model actions: `model_action :name, refreshed_template do ... end` responds with Turbo Stream replacements for the action template and the `refreshed_template` (see `lib/crumble-turbo/src/orma/model_action.cr` for behavior).
+- Action forms: `action_form` returns a `Crumble::Turbo::ActionForm`; to add extra HTML around it, use `action_form.to_html do ... end` (don’t call `action_form do ... end`).
+
+## Shards: Stimulus
+- `crumble-stimulus` auto-includes the JS bundle for all `Stimulus::Controller`s that are `require`d.
+- This app requires `./js/**` from `src/environment.cr`, so global controllers can live in `src/js/*.cr`.
+- You can also define action-scoped controllers inline using `stimulus_controller SomeController do ... end` (from `stimulus.cr`) inside a `model_action` block, then expose it via a model method (e.g. `def update_name_controller; UpdateNameAction::SomeController; end`) for use in views.
+
+## Shards: Crumble::Form in Actions
+- Prefer defining action input via the action `form do ... end` macro (creates `Form < Crumble::Form`) and parse with `Form.from_www_form(...)`.
+- If you want validation errors to show after submit, keep the parsed form on the action instance (e.g. `@submitted_form`) and have `def form` return it so the refreshed action template can render errors.
 
 ## Testing Guidelines
 - Place specs in `spec/` and name files `*_spec.cr`; keep examples small and deterministic.
