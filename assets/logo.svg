@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 512 512"
+     role="img"
+     aria-label="Split circle logo with transparent separators">
+
+  <defs>
+    <!-- Gradients -->
+    <linearGradient id="gTeal" x1="120" y1="120" x2="300" y2="260" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#4FE3D1"/>
+      <stop offset="1" stop-color="#18AFC6"/>
+    </linearGradient>
+
+    <linearGradient id="gGreen" x1="260" y1="80" x2="460" y2="240" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7EF2C3"/>
+      <stop offset="1" stop-color="#35CFA0"/>
+    </linearGradient>
+
+    <linearGradient id="gCoral" x1="300" y1="260" x2="460" y2="460" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF8A7A"/>
+      <stop offset="1" stop-color="#FF5F6D"/>
+    </linearGradient>
+
+    <linearGradient id="gBlue" x1="120" y1="300" x2="320" y2="480" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#5BB8FF"/>
+      <stop offset="1" stop-color="#2F86FF"/>
+    </linearGradient>
+
+    <!-- Mask: white = visible, black = transparent -->
+    <mask id="cutGaps">
+      <!-- Base circle -->
+      <rect width="512" height="512" fill="black"/>
+      <circle cx="256" cy="256" r="220" fill="white"/>
+
+      <!-- Curved separator cuts -->
+      <g fill="none" stroke="black" stroke-width="44" stroke-linecap="round">
+        <path d="M256 256 C 330 230, 405 242, 476 256"/>
+        <path d="M256 256 C 282 332, 270 404, 256 476"/>
+        <path d="M256 256 C 182 282, 110 270, 36 256"/>
+        <path d="M256 256 C 230 182, 242 110, 256 36"/>
+      </g>
+
+      <!-- Center hole -->
+      <circle cx="256" cy="256" r="28" fill="black"/>
+    </mask>
+  </defs>
+
+  <!-- Colored segments, masked -->
+  <g mask="url(#cutGaps)">
+    <path d="M256 256 L36 256 A220 220 0 0 1 256 36 Z" fill="url(#gTeal)"/>
+    <path d="M256 256 L256 36 A220 220 0 0 1 476 256 Z" fill="url(#gGreen)"/>
+    <path d="M256 256 L476 256 A220 220 0 0 1 256 476 Z" fill="url(#gCoral)"/>
+    <path d="M256 256 L256 476 A220 220 0 0 1 36 256 Z" fill="url(#gBlue)"/>
+  </g>
+</svg>
