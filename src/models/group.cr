@@ -10,6 +10,9 @@ class Group < ApplicationRecord
   has_many_of GroupMembership
   has_many_of Expense
 
+  css_class TopAppBarHeadlineWrapper
+  css_class TopAppBarHeadlineButton
+
   private def format_euros(amount_cents : Int32) : String
     (amount_cents.to_f / 100).format(",", ".", decimal_places: 2)
   end
@@ -37,12 +40,164 @@ class Group < ApplicationRecord
       end
   end
 
+  model_template :top_app_bar_headline, [TopAppBarHeadlineWrapper] do
+    button TopAppBarHeadlineButton, update_name_controller.toggle_action("click"), type: :button do
+      name
+    end
+  end
+
+  def update_name_controller
+    UpdateNameAction::NameEditorController
+  end
+
   model_template :card do
     a href: GroupResource.uri_path(id) do
       Crumble::Material::Card.new.to_html do
         Crumble::Material::Card::Title.new(name)
         Crumble::Material::Card::SecondaryText.new.to_html do
           Crumble::Material::Icon.new("account_circle", "#{group_memberships.count} Mitglied(er)")
+        end
+      end
+    end
+  end
+
+  model_action :update_name, top_app_bar_headline do
+    css_class FormContainer
+    css_class FieldRow
+    css_class NameInput
+    css_class ButtonRow
+    css_class ErrorMessage
+
+    stimulus_controller NameEditorController do
+      targets :form, :input
+
+      action :toggle do
+        this.formTarget.hidden = !this.formTarget.hidden
+
+        unless this.formTarget.hidden
+          this.inputTarget.focus._call
+          this.inputTarget.select._call
+        end
+      end
+    end
+
+    form do
+      field name : String
+
+      def valid?
+        super
+
+        errors = @errors.not_nil!
+        if (value = name) && value.strip.empty?
+          errors << "name"
+        end
+
+        errors.none?
+      end
+
+      def normalized_name : String?
+        name.try(&.strip)
+      end
+
+      ToHtml.instance_template do
+        div FieldRow do
+          input NameInput, NameEditorController.input_target, type: :text, name: "name", value: name.to_s, required: true
+        end
+      end
+    end
+
+    @submitted_form : Form? = nil
+
+    def form
+      @submitted_form || Form.new(name: model.name.value)
+    end
+
+    def show_form? : Bool
+      if errors = form.errors
+        errors.any?
+      else
+        false
+      end
+    end
+
+    before do
+      return 403 unless user_id = ctx.session.user_id
+
+      return 403 unless model.group_memberships.any? { |gm| gm.user_id == user_id }
+
+      true
+    end
+
+    controller do
+      unless body = ctx.request.body
+        ctx.response.status = :bad_request
+        return
+      end
+
+      @submitted_form = Form.from_www_form(body.gets_to_end)
+      form = @submitted_form.not_nil!
+
+      unless form.valid?
+        ctx.response.status = :unprocessable_entity
+        return
+      end
+
+      new_name = form.normalized_name
+      return unless new_name
+
+      model.update(name: new_name)
+      model.card.refresh!
+    end
+
+    view do
+      template do
+        div NameEditorController.form_target, hidden: !action.show_form? do
+          div FormContainer do
+            action_form.to_html do
+              if errors = action.form.errors
+                if errors.includes?("name")
+                  div ErrorMessage do
+                    "Bitte gib einen Gruppennamen ein."
+                  end
+                end
+              end
+
+              div ButtonRow do
+                button do
+                  "Speichern"
+                end
+              end
+            end
+          end
+        end
+      end
+
+      style do
+        rule FormContainer do
+          padding 16.px
+          border 1.px, :solid, :silver
+          margin_bottom 16.px
+          max_width 600.px
+          margin_left :auto
+          margin_right :auto
+        end
+
+        rule FieldRow do
+          display :flex
+        end
+
+        rule NameInput do
+          width 100.percent
+        end
+
+        rule ButtonRow do
+          margin_top 12.px
+          display :flex
+          justify_content :flex_end
+        end
+
+        rule ErrorMessage do
+          margin_bottom 10.px
         end
       end
     end
@@ -192,6 +347,20 @@ class Group < ApplicationRecord
       flex_wrap :wrap
       gap 20.px
       margin_top 20.px
+    end
+
+    rule TopAppBarHeadlineWrapper do
+      display :inline
+    end
+
+    rule TopAppBarHeadlineButton do
+      background_color :transparent
+      border :none
+      padding 0.px
+      color :inherit
+      font_size :inherit
+      font_weight :inherit
+      cursor :pointer
     end
   end
 
