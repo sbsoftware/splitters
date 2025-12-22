@@ -42,7 +42,11 @@ class GroupMembership < ApplicationRecord
         end
       end
 
-      model.update(name: new_name) if new_name && new_name.size.positive?
+      normalized_name = new_name.try(&.strip)
+      if normalized_name && normalized_name.size.positive?
+        model.update(name: normalized_name)
+        User.find(model.user_id).update(name: normalized_name)
+      end
     end
 
     view do

@@ -204,7 +204,7 @@ class Group < ApplicationRecord
   end
 
   accessible GroupMembership, GroupResource, card do
-    access_model_attributes user_id: ctx.session.ensure_user.id.value
+    access_model_attributes user_id: ctx.session.ensure_user.id.value, name: ctx.session.ensure_user.preferred_name
 
     access_view do
       css_class Container
