@@ -51,7 +51,7 @@ class Group < ApplicationRecord
   end
 
   model_template :card do
-    a href: GroupResource.uri_path(id) do
+    a href: GroupPage.uri_path(id) do
       Crumble::Material::Card.new.to_html do
         Crumble::Material::Card::Title.new(name)
         Crumble::Material::Card::SecondaryText.new.to_html do

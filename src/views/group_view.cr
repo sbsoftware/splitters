@@ -9,7 +9,7 @@ class GroupView
 
   class BackLink
     ToHtml.class_template do
-      a HomeResource do
+      a HomePage do
         Crumble::Material::Icon.new("arrow_back")
       end
     end
@@ -25,7 +25,7 @@ class GroupView
 
   record MembersLink, group : Group do
     ToHtml.instance_template do
-      a href: GroupMembersResource.uri_path(group.id) do
+      a href: GroupMembersPage.uri_path(group.id) do
         Crumble::Material::Icon.new("group")
       end
     end

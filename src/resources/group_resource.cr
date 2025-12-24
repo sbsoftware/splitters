@@ -1,12 +1,6 @@
 require "base58"
 
 class GroupResource < ApplicationResource
-  layout ApplicationLayout do
-    def top_app_bar
-      nil
-    end
-  end
-
   def create
     unless user = ctx.session.user
       user = User.create
@@ -17,19 +11,5 @@ class GroupResource < ApplicationResource
     GroupMembership.create(group_id: group.id, user_id: user.id, name: user.preferred_name)
 
     redirect self.class.uri_path(group.id)
-  end
-
-  def show
-    unless user = ctx.session.user
-      redirect HomeResource.uri_path
-      return
-    end
-
-    group = Group.find(id)
-    if group_membership = group.group_memberships.find { |gm| gm.user_id == user.id }
-      render GroupView.new(ctx: ctx, group_membership: group_membership)
-    else
-      redirect HomeResource.uri_path
-    end
   end
 end

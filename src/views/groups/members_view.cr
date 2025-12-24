@@ -8,7 +8,7 @@ module Groups
 
     record BackLink, group : Group do
       ToHtml.instance_template do
-        a href: GroupResource.uri_path(group.id) do
+        a href: GroupPage.uri_path(group.id) do
           Crumble::Material::Icon.new("arrow_back")
         end
       end
