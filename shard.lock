@@ -6,7 +6,7 @@ shards:
 
   crumble:
     git: https://github.com/sbsoftware/crumble.git
-    version: 0.26.0
+    version: 0.28.1
 
   crumble-material:
     git: https://github.com/sbsoftware/crumble-material.git
@@ -58,7 +58,7 @@ shards:
 
   orma:
     git: https://github.com/sbsoftware/orma.git
-    version: 0.10.2
+    version: 0.11.0
 
   parse_date:
     git: https://github.com/wyhaines/parsedate.cr.git

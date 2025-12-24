@@ -1,3 +1,6 @@
 #!/bin/sh
 
-watchexec -r -w src -e cr "LOG_LEVEL=trace crystal run --error-trace src/splitters.cr -- -p 3007"
+export DATABASE_URL=sqlite3://./data.db
+export LOG_LEVEL=trace
+
+lib/crumble/src/watch.sh splitters 3007
