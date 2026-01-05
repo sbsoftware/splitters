@@ -6,7 +6,7 @@ shards:
 
   crumble:
     git: https://github.com/sbsoftware/crumble.git
-    version: 0.28.1
+    version: 0.28.2
 
   crumble-material:
     git: https://github.com/sbsoftware/crumble-material.git
@@ -90,5 +90,5 @@ shards:
 
   to_html:
     git: https://github.com/sbsoftware/to_html.cr.git
-    version: 1.5.0
+    version: 1.5.1
 
