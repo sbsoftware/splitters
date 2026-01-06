@@ -172,9 +172,12 @@ class GroupMembership < ApplicationRecord
   style do
     rule NameFormContainer do
       margin 0.px, :auto
+      margin_bottom 16.px
       padding 16.px
-      max_width 600.px
+      max_width 800.px
       border 1.px, :solid, :silver
+      width 100.percent
+      box_sizing :border_box
     end
 
     rule NamePrompt do

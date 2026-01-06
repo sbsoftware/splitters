@@ -177,9 +177,10 @@ class Group < ApplicationRecord
           padding 16.px
           border 1.px, :solid, :silver
           margin_bottom 16.px
-          max_width 600.px
+          max_width 800.px
           margin_left :auto
           margin_right :auto
+          box_sizing :border_box
         end
 
         rule FieldRow do
@@ -223,7 +224,7 @@ class Group < ApplicationRecord
 
       style do
         rule Container do
-          max_width 600.px
+          max_width 800.px
           margin 0.px, :auto
           display :flex
           flex_direction :column
@@ -281,29 +282,41 @@ class Group < ApplicationRecord
     end
 
     view do
+      css_class CreateExpenseBox
       css_class Field
       css_class ButtonRow
 
       template do
-        h3 { "Neue Ausgabe" }
-        form action: action.uri_path, method: "POST" do
-          div Field do
-            label { "Beschreibung:" }
-            input type: :text, name: DESCRIPTION_FIELD, required: true
-          end
-          div Field do
-            label { "Betrag in €:" }
-            input type: :number, name: AMOUNT_FIELD, required: true, step: ".01"
-          end
-          div ButtonRow do
-            button do
-              "Speichern"
+        div CreateExpenseBox do
+          h3 { "Neue Ausgabe" }
+          form action: action.uri_path, method: "POST" do
+            div Field do
+              label { "Beschreibung:" }
+              input type: :text, name: DESCRIPTION_FIELD, required: true
+            end
+            div Field do
+              label { "Betrag in €:" }
+              input type: :number, name: AMOUNT_FIELD, required: true, step: ".01"
+            end
+            div ButtonRow do
+              button do
+                "Speichern"
+              end
             end
           end
         end
       end
 
       style do
+        rule CreateExpenseBox do
+          max_width 800.px
+          margin 0.px, :auto
+          margin_bottom 16.px
+          padding 16.px
+          border 1.px, :solid, :silver
+          box_sizing :border_box
+        end
+
         rule Field do
           display :flex
           justify_content :space_between
@@ -324,7 +337,7 @@ class Group < ApplicationRecord
 
   style do
     rule ExpensesSummaryBox do
-      max_width 600.px
+      max_width 800.px
       margin 0.px, :auto
       margin_bottom 16.px
       padding 16.px
