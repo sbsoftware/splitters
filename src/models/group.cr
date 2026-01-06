@@ -336,6 +336,8 @@ class Group < ApplicationRecord
   css_class ExpensesSummaryLine
 
   style do
+    EXPENSE_CARD_MIN_WIDTH = 376.px
+
     rule ExpensesSummaryBox do
       max_width 800.px
       margin 0.px, :auto
@@ -355,11 +357,20 @@ class Group < ApplicationRecord
     end
 
     rule ExpensesContainer do
-      display :flex
-      justify_content :flex_start
-      flex_wrap :wrap
+      display :grid
+      property(
+        "grid-template-columns",
+        "repeat(auto-fill, minmax(min(#{EXPENSE_CARD_MIN_WIDTH}, calc(100vw - 32px)), 1fr))"
+      )
+      property("justify-items", "center")
       gap 20.px
       margin_top 20.px
+      width 100.percent
+      box_sizing :border_box
+
+      rule Crumble::Material::Card::Card do
+        width EXPENSE_CARD_MIN_WIDTH
+      end
     end
 
     rule TopAppBarHeadlineWrapper do
