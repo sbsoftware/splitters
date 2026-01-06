@@ -203,7 +203,7 @@ class Group < ApplicationRecord
     end
   end
 
-  accessible GroupMembership, GroupResource, card do
+  accessible GroupMembership, GroupPage, card do
     access_model_attributes user_id: ctx.session.ensure_user.id.value, name: ctx.session.ensure_user.preferred_name
 
     access_view do
@@ -405,5 +405,9 @@ class Group < ApplicationRecord
         end
       end
     end
+  end
+
+  model_template :members_list_view do
+    Groups::MembersListView.new(ctx, model)
   end
 end
