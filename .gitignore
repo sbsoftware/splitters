@@ -3,6 +3,7 @@
 /bin/
 /.shards/
 *.dwarf
+.env
 
 .deploy.yml
 data.db
