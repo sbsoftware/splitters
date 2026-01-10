@@ -13,7 +13,7 @@ class Group < ApplicationRecord
   css_class TopAppBarHeadlineWrapper
   css_class TopAppBarHeadlineButton
 
-  private def format_euros(amount_cents : Int32) : String
+  def format_euros(amount_cents : Int32 | Int64) : String
     (amount_cents.to_f / 100).format(",", ".", decimal_places: 2)
   end
 
@@ -334,6 +334,7 @@ class Group < ApplicationRecord
   css_class ExpensesContainer
   css_class ExpensesSummaryBox
   css_class ExpensesSummaryLine
+  css_class ExpensesSummaryTotal
 
   style do
     EXPENSE_CARD_MIN_WIDTH = 376.px
@@ -354,6 +355,12 @@ class Group < ApplicationRecord
 
     rule ExpensesSummaryLine do
       margin 0.px
+    end
+
+    rule ExpensesSummaryTotal do
+      margin 0.px
+      margin_bottom 12.px
+      font_weight :bold
     end
 
     rule ExpensesContainer do
@@ -390,9 +397,13 @@ class Group < ApplicationRecord
 
   model_template :expenses_summary_view do
     div ExpensesSummaryBox do
-      h3 { "Zusammenfassung" }
+      expenses_list = expenses.to_a
+      total_cents = expenses_list.sum(0_i64) { |expense| expense.amount.value.to_i64 }
+      div ExpensesSummaryTotal do
+        "Summe aller Ausgaben: #{format_euros(total_cents)} €"
+      end
 
-      if expenses.empty?
+      if expenses_list.empty?
         p { "Noch keine Ausgaben." }
       else
         statements = expense_debt_statements
