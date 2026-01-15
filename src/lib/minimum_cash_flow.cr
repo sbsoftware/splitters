@@ -10,14 +10,19 @@ module MinimumCashFlow
   # This method deliberately splits the *total* amount once to avoid rounding drift that would
   # occur if each expense was rounded individually.
   def self.pairwise_debts(member_weights : Hash(Int64, Int32), expenses : Array(Tuple(Int64, Int32))) : Array(Debt)
-    return [] of Debt if member_weights.size < 2 || expenses.empty?
+    balances = balances_from_expenses(member_weights, expenses)
+    pairwise_debts_from_balances(balances)
+  end
+
+  def self.balances_from_expenses(member_weights : Hash(Int64, Int32), expenses : Array(Tuple(Int64, Int32))) : Hash(Int64, Int32)
+    return {} of Int64 => Int32 if member_weights.size < 2 || expenses.empty?
 
     member_ids = member_weights.keys.sort
     member_ids_set = member_ids.to_set
 
     # Ignore expenses from unknown payers (e.g. stale data) so we don't crash or skew results.
     valid_expenses = expenses.select { |paid_by_id, _| member_ids_set.includes?(paid_by_id) }
-    return [] of Debt if valid_expenses.empty?
+    return {} of Int64 => Int32 if valid_expenses.empty?
 
     # Total sum in cents (guard overflow because we return Int32 cent amounts in results).
     total_amount_cents_i64 = valid_expenses.sum(0_i64) { |(_, amount_cents)| amount_cents.to_i64 }
@@ -33,16 +38,29 @@ module MinimumCashFlow
       paid_by_member[paid_by_id] += amount_cents
     end
 
-    # Turn `paid - owed` into two lists:
+    balances = Hash(Int64, Int32).new(0)
+    member_ids.each do |member_id|
+      paid = paid_by_member[member_id]? || 0
+      owed = owed_by_member[member_id]
+      balances[member_id] = paid - owed
+    end
+
+    balances
+  end
+
+  def self.pairwise_debts_from_balances(balances : Hash(Int64, Int32)) : Array(Debt)
+    return [] of Debt if balances.empty?
+
+    member_ids = balances.keys.sort
+
+    # Turn balances into two lists:
     # - debtors: need to pay money (negative balance)
     # - creditors: should receive money (positive balance)
     debtors = [] of Tuple(Int64, Int32)
     creditors = [] of Tuple(Int64, Int32)
 
     member_ids.each do |member_id|
-      paid = paid_by_member[member_id]? || 0
-      owed = owed_by_member[member_id]
-      balance = paid - owed
+      balance = balances[member_id]
 
       if balance > 0
         creditors << {member_id, balance}
@@ -50,6 +68,8 @@ module MinimumCashFlow
         debtors << {member_id, -balance}
       end
     end
+
+    return [] of Debt if debtors.empty? || creditors.empty?
 
     # Greedily transfer from debtors to creditors.
     # This produces a small, deterministic set of payments that settles everyone to zero.

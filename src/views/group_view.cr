@@ -49,6 +49,7 @@ class GroupView
         group_membership.name_prompt_box.renderer(ctx)
         group.expenses_summary_view.renderer(ctx)
         group.create_expense_action_template(ctx)
+        group.create_reimbursement_action_template(ctx)
         group.expenses_view.renderer(ctx)
       end
     end

@@ -1,5 +1,7 @@
 require "./application_record"
+require "./expense"
 require "./group_membership"
+require "./reimbursement"
 require "../resources/application_resource"
 
 class Group < ApplicationRecord
@@ -9,6 +11,7 @@ class Group < ApplicationRecord
 
   has_many_of GroupMembership
   has_many_of Expense
+  has_many_of Reimbursement
 
   css_class TopAppBarHeadlineWrapper
   css_class TopAppBarHeadlineButton
@@ -17,17 +20,55 @@ class Group < ApplicationRecord
     (amount_cents.to_f / 100).format(",", ".", decimal_places: 2)
   end
 
+  def ledger_entries : Array(Expense | Reimbursement)
+    entries = expenses.to_a + reimbursements.to_a
+    entries.sort_by do |entry|
+      # Explicit casts keep the compiler from widening this union to ApplicationRecord+
+      if entry.is_a?(Expense)
+        expense = entry.as(Expense)
+        {expense.created_at.value, expense.id.value}
+      else
+        reimbursement = entry.as(Reimbursement)
+        {reimbursement.created_at.value, reimbursement.id.value}
+      end
+    end.reverse!
+  end
+
+  def balances_with_reimbursements(memberships : Array(GroupMembership)) : Hash(Int64, Int32)
+    member_weights = memberships.to_h { |gm| {gm.id.value, gm.weight.value} }
+    balances = Hash(Int64, Int32).new(0)
+    member_weights.keys.each { |member_id| balances[member_id] = 0 }
+
+    expenses_input = expenses.map { |e| {e.group_membership_id.value, e.amount.value} }
+    MinimumCashFlow
+      .balances_from_expenses(member_weights: member_weights, expenses: expenses_input)
+      .each do |member_id, balance|
+        balances[member_id] = balance
+      end
+
+    reimbursements.each do |reimbursement|
+      payer_id = reimbursement.payer_membership_id.value
+      recipient_id = reimbursement.recipient_membership_id.value
+      next unless balances.has_key?(payer_id) && balances.has_key?(recipient_id)
+
+      amount = reimbursement.amount.value
+      balances[payer_id] += amount
+      balances[recipient_id] -= amount
+    end
+
+    balances
+  end
+
   def expense_debt_statements : Array(String)
     memberships = group_memberships.to_a
     return [] of String if memberships.size < 2
 
-    member_weights = memberships.to_h { |gm| {gm.id.value, gm.weight.value} }
-    expenses_input = expenses.map { |e| {e.group_membership_id.value, e.amount.value} }
-
     membership_by_id = memberships.to_h { |gm| {gm.id.value, gm} }
 
+    balances = balances_with_reimbursements(memberships)
+
     MinimumCashFlow
-      .pairwise_debts(member_weights: member_weights, expenses: expenses_input)
+      .pairwise_debts_from_balances(balances)
       .sort_by do |debt|
         debtor = membership_by_id[debt.debtor_id]
         creditor = membership_by_id[debt.creditor_id]
@@ -331,10 +372,165 @@ class Group < ApplicationRecord
     end
   end
 
+  model_action :create_reimbursement, expenses_view do
+    AMOUNT_FIELD    = "amount"
+    RECIPIENT_FIELD = "recipient_membership_id"
+
+    controller do
+      unless body = ctx.request.body
+        ctx.response.status = :bad_request
+        return
+      end
+
+      amount = nil
+      recipient_id = nil
+      HTTP::Params.parse(body.gets_to_end) do |key, value|
+        case key
+        when AMOUNT_FIELD
+          amount = (value.to_f * 100).floor.to_i
+        when RECIPIENT_FIELD
+          recipient_id = value.to_i64?
+        end
+      rescue Exception
+        amount = nil
+        recipient_id = nil
+      end
+
+      group_membership = model.group_memberships.find do |group_membership|
+        group_membership.user_id == ctx.session.user_id
+      end
+
+      recipient_membership = recipient_id ? model.group_memberships.find { |gm| gm.id == recipient_id } : nil
+
+      unless amount && group_membership && recipient_membership && recipient_membership.id != group_membership.id
+        ctx.response.status = :unprocessable_entity
+        return
+      end
+
+      Reimbursement.create(
+        group_id: model.id,
+        payer_membership_id: group_membership.id,
+        recipient_membership_id: recipient_membership.id,
+        amount: amount
+      )
+
+      model.expenses_summary_view.refresh!
+      ctx.response.status = :created
+    end
+
+    view do
+      css_class ReimbursementToggle
+      css_class ReimbursementToggleButton
+      css_class ReimbursementToggleLabel
+      css_class ReimbursementCaret
+      css_class ReimbursementFormBox
+      css_class ReimbursementField
+      css_class ReimbursementButtonRow
+
+      stimulus_controller ReimbursementToggleController do
+        targets :form
+
+        action :toggle do
+          this.formTarget.hidden = !this.formTarget.hidden
+        end
+      end
+
+      template do
+        memberships = model.group_memberships.to_a
+        current_membership = memberships.find { |membership| membership.user_id == ctx.session.user_id }
+        other_memberships = if current_membership
+                              memberships.reject { |membership| membership.id == current_membership.id }
+                            else
+                              memberships
+                            end
+
+        div ReimbursementToggle, ReimbursementToggleController do
+          button ReimbursementToggleButton, ReimbursementToggleController.toggle_action("click"), type: :button do
+            span ReimbursementToggleLabel do
+              "Rückerstattung hinzufügen"
+            end
+            span ReimbursementCaret
+          end
+
+          form ReimbursementToggleController.form_target, ReimbursementFormBox, action: action.uri_path, method: "POST", hidden: true do
+            div ReimbursementField do
+              label { "Betrag in €:" }
+              input type: :number, name: AMOUNT_FIELD, required: true, step: ".01"
+            end
+            div ReimbursementField do
+              label { "An:" }
+              select_tag name: RECIPIENT_FIELD, required: true do
+                option(value: "") do
+                  "Bitte auswählen"
+                end
+                other_memberships.each do |membership|
+                  option(value: membership.id) do
+                    membership.display_name
+                  end
+                end
+              end
+            end
+            div ReimbursementButtonRow do
+              button do
+                "Speichern"
+              end
+            end
+          end
+        end
+      end
+
+      style do
+        rule ReimbursementToggle do
+          max_width 800.px
+          margin 0.px, :auto
+          margin_bottom 16.px
+        end
+
+        rule ReimbursementToggleButton do
+          display :flex
+          align_items :center
+          gap 8.px
+          background_color :transparent
+          border :none
+          padding 0.px
+          font_size 1.rem
+          cursor :pointer
+        end
+
+        rule ReimbursementCaret do
+          width 0.px
+          height 0.px
+          border_left 6.px, :solid, "transparent"
+          border_right 6.px, :solid, "transparent"
+          border_top 8.px, :solid, "#333"
+        end
+
+        rule ReimbursementFormBox do
+          margin_top 12.px
+          padding 16.px
+          border 1.px, :solid, :silver
+          box_sizing :border_box
+        end
+
+        rule ReimbursementField do
+          display :flex
+          justify_content :space_between
+          margin_bottom 16.px
+        end
+
+        rule ReimbursementButtonRow do
+          display :flex
+          justify_content :flex_end
+        end
+      end
+    end
+  end
+
   css_class ExpensesContainer
   css_class ExpensesSummaryBox
   css_class ExpensesSummaryLine
   css_class ExpensesSummaryTotal
+  css_class ReimbursementCard
 
   style do
     EXPENSE_CARD_MIN_WIDTH = 376.px
@@ -380,6 +576,12 @@ class Group < ApplicationRecord
       end
     end
 
+    rule ReimbursementCard do
+      rule Crumble::Material::Card::Card do
+        background_color "#d8f5d0"
+      end
+    end
+
     rule TopAppBarHeadlineWrapper do
       display :inline
     end
@@ -398,12 +600,13 @@ class Group < ApplicationRecord
   model_template :expenses_summary_view do
     div ExpensesSummaryBox do
       expenses_list = expenses.to_a
+      entries = ledger_entries
       total_cents = expenses_list.sum(0_i64) { |expense| expense.amount.value.to_i64 }
       div ExpensesSummaryTotal do
         "Summe aller Ausgaben: #{format_euros(total_cents)} €"
       end
 
-      if expenses_list.empty?
+      if entries.empty?
         p { "Noch keine Ausgaben." }
       else
         statements = expense_debt_statements
@@ -422,19 +625,32 @@ class Group < ApplicationRecord
 
   model_template :expenses_view do
     div ExpensesContainer do
-      expenses.each do |expense|
-        Crumble::Material::Card.new.to_html do
-          Crumble::Material::Card::Title.new(expense.description)
-          Crumble::Material::Card::SecondaryText.new.to_html do
-            span do
-              (expense.amount.to_f / 100).format(",", ".", decimal_places: 2)
-              " € "
+      ledger_entries.each do |entry|
+        if entry.is_a?(Expense)
+          expense = entry.as(Expense)
+          Crumble::Material::Card.new.to_html do
+            Crumble::Material::Card::Title.new(expense.description)
+            Crumble::Material::Card::SecondaryText.new.to_html do
+              span do
+                (expense.amount.to_f / 100).format(",", ".", decimal_places: 2)
+                " € "
+              end
+              span do
+                "bezahlt von "
+              end
+              strong do
+                expense.group_membership.name
+              end
             end
-            span do
-              "bezahlt von "
-            end
-            strong do
-              expense.group_membership.name
+          end
+        elsif entry.is_a?(Reimbursement)
+          reimbursement = entry.as(Reimbursement)
+          div ReimbursementCard do
+            Crumble::Material::Card.new.to_html do
+              payer = reimbursement.payer_membership.display_name
+              recipient = reimbursement.recipient_membership.display_name
+              amount = format_euros(reimbursement.amount.value)
+              "#{payer} hat #{amount}€ an #{recipient} gezahlt"
             end
           end
         end
