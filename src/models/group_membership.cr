@@ -110,6 +110,7 @@ class GroupMembership < ApplicationRecord
       model.update(name: new_name)
       User.find(model.user_id).update(name: new_name)
       model.name_prompt_box.refresh!
+      model.group.expenses_summary_view.refresh!
     end
 
     view do
