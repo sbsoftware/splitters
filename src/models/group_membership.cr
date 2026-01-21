@@ -77,7 +77,7 @@ class GroupMembership < ApplicationRecord
     @submitted_form : Form? = nil
 
     def form
-      @submitted_form || Form.new(name: model.name.try(&.value) || "")
+      @submitted_form || Form.new(ctx, name: model.name.try(&.value) || "")
     end
 
     def editable? : Bool
@@ -96,7 +96,7 @@ class GroupMembership < ApplicationRecord
         return
       end
 
-      @submitted_form = Form.from_www_form(body.gets_to_end)
+      @submitted_form = Form.from_www_form(ctx, body.gets_to_end)
       form = @submitted_form.not_nil!
 
       unless form.valid?

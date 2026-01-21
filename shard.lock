@@ -6,7 +6,7 @@ shards:
 
   crumble:
     git: https://github.com/sbsoftware/crumble.git
-    version: 0.28.2
+    version: 0.29.1
 
   crumble-material:
     git: https://github.com/sbsoftware/crumble-material.git
@@ -14,15 +14,15 @@ shards:
 
   crumble-orma:
     git: https://github.com/sbsoftware/crumble-orma.git
-    version: 0.2.0
+    version: 0.3.1
 
   crumble-stimulus:
     git: https://github.com/sbsoftware/crumble-stimulus.git
-    version: 0.3.2
+    version: 0.4.0
 
   crumble-turbo:
     git: https://github.com/sbsoftware/crumble-turbo.git
-    version: 0.14.0
+    version: 0.17.2
 
   css:
     git: https://github.com/sbsoftware/css.cr.git
@@ -42,7 +42,7 @@ shards:
 
   js:
     git: https://github.com/sbsoftware/js.cr.git
-    version: 1.5.0
+    version: 1.7.0
 
   nbchannel:
     git: https://github.com/wyhaines/nbchannel.cr.git
@@ -90,5 +90,5 @@ shards:
 
   to_html:
     git: https://github.com/sbsoftware/to_html.cr.git
-    version: 1.5.1
+    version: 1.5.2
 

@@ -92,7 +92,7 @@ class Group < ApplicationRecord
   end
 
   model_template :card do
-    a href: GroupPage.uri_path(id) do
+    a href: GroupPage.uri_path(group_id: id) do
       Crumble::Material::Card.new.to_html do
         Crumble::Material::Card::Title.new(name)
         Crumble::Material::Card::SecondaryText.new.to_html do
@@ -150,7 +150,7 @@ class Group < ApplicationRecord
     @submitted_form : Form? = nil
 
     def form
-      @submitted_form || Form.new(name: model.name.value)
+      @submitted_form || Form.new(ctx, name: model.name.value)
     end
 
     def show_form? : Bool
@@ -175,7 +175,7 @@ class Group < ApplicationRecord
         return
       end
 
-      @submitted_form = Form.from_www_form(body.gets_to_end)
+      @submitted_form = Form.from_www_form(ctx, body.gets_to_end)
       form = @submitted_form.not_nil!
 
       unless form.valid?
@@ -286,9 +286,22 @@ class Group < ApplicationRecord
     end
   end
 
-  model_action :create_expense, expenses_view do
+  create_child_action :create_expense, Expense, group_id, {expenses_view, expenses_summary_view} do
     DESCRIPTION_FIELD = "description"
     AMOUNT_FIELD      = "amount"
+
+    form do
+      field description : String
+      field amount : Float64
+    end
+
+    def current_group_membership : GroupMembership?
+      return nil unless user_id = ctx.session.user_id
+
+      model.group_memberships.find do |group_membership|
+        group_membership.user_id == user_id
+      end
+    end
 
     controller do
       unless body = ctx.request.body
@@ -296,29 +309,36 @@ class Group < ApplicationRecord
         return
       end
 
-      description = nil
-      amount = nil
-      HTTP::Params.parse(body.gets_to_end) do |key, value|
-        case key
-        when DESCRIPTION_FIELD
-          description = value
-        when AMOUNT_FIELD
-          amount = (value.to_f * 100).floor.to_i
-        end
-      end
-
-      group_membership = model.group_memberships.find do |group_membership|
-        group_membership.user_id == ctx.session.user_id
-      end
-
-      unless description && amount && group_membership
+      form = begin
+        Form.from_www_form(ctx, body.gets_to_end)
+      rescue Exception
         ctx.response.status = :unprocessable_entity
         return
       end
 
-      Expense.create(description: description, amount: amount, group_id: model.id, group_membership_id: group_membership.id)
+      unless form.valid?
+        ctx.response.status = :unprocessable_entity
+        return
+      end
 
-      model.expenses_summary_view.refresh!
+      group_membership = current_group_membership
+      description = form.description
+      amount = form.amount
+
+      unless group_membership && description && amount
+        ctx.response.status = :unprocessable_entity
+        return
+      end
+
+      amount_cents = (amount * 100).floor.to_i
+
+      self.class.child_class.create(
+        **parent_params,
+        description: description,
+        amount: amount_cents,
+        group_membership_id: group_membership.id
+      )
+
       ctx.response.status = :created
     end
 
@@ -372,9 +392,22 @@ class Group < ApplicationRecord
     end
   end
 
-  model_action :create_reimbursement, expenses_view do
+  create_child_action :create_reimbursement, Reimbursement, group_id, {expenses_view, expenses_summary_view} do
     AMOUNT_FIELD    = "amount"
     RECIPIENT_FIELD = "recipient_membership_id"
+
+    form do
+      field amount : Float64
+      field recipient_membership_id : Int64
+    end
+
+    def current_group_membership : GroupMembership?
+      return nil unless user_id = ctx.session.user_id
+
+      model.group_memberships.find do |group_membership|
+        group_membership.user_id == user_id
+      end
+    end
 
     controller do
       unless body = ctx.request.body
@@ -382,39 +415,42 @@ class Group < ApplicationRecord
         return
       end
 
-      amount = nil
-      recipient_id = nil
-      HTTP::Params.parse(body.gets_to_end) do |key, value|
-        case key
-        when AMOUNT_FIELD
-          amount = (value.to_f * 100).floor.to_i
-        when RECIPIENT_FIELD
-          recipient_id = value.to_i64?
-        end
+      form = begin
+        Form.from_www_form(ctx, body.gets_to_end)
       rescue Exception
-        amount = nil
-        recipient_id = nil
-      end
-
-      group_membership = model.group_memberships.find do |group_membership|
-        group_membership.user_id == ctx.session.user_id
-      end
-
-      recipient_membership = recipient_id ? model.group_memberships.find { |gm| gm.id == recipient_id } : nil
-
-      unless amount && group_membership && recipient_membership && recipient_membership.id != group_membership.id
         ctx.response.status = :unprocessable_entity
         return
       end
 
-      Reimbursement.create(
-        group_id: model.id,
+      unless form.valid?
+        ctx.response.status = :unprocessable_entity
+        return
+      end
+
+      group_membership = current_group_membership
+      amount = form.amount
+      recipient_id = form.recipient_membership_id
+
+      unless group_membership && amount && recipient_id
+        ctx.response.status = :unprocessable_entity
+        return
+      end
+
+      recipient_membership = model.group_memberships.find { |gm| gm.id == recipient_id }
+      unless recipient_membership && recipient_membership.id != group_membership.id
+        ctx.response.status = :unprocessable_entity
+        return
+      end
+
+      amount_cents = (amount * 100).floor.to_i
+
+      self.class.child_class.create(
+        **parent_params,
         payer_membership_id: group_membership.id,
         recipient_membership_id: recipient_membership.id,
-        amount: amount
+        amount: amount_cents
       )
 
-      model.expenses_summary_view.refresh!
       ctx.response.status = :created
     end
 

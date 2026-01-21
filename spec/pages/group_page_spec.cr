@@ -9,7 +9,7 @@ describe GroupPage do
 
     response_io = IO::Memory.new
     ctx = Crumble::Server::TestRequestContext.new(
-      resource: GroupPage.uri_path(group.id),
+      resource: GroupPage.uri_path(group_id: group.id),
       method: "GET",
       response_io: response_io
     )

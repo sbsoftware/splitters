@@ -1,15 +1,7 @@
 class GroupMembersPage < ApplicationPage
-  def self.root_path
-    "/groups"
-  end
-
-  def self.nested_path
-    "/members"
-  end
-
-  def self.uri_path_matcher
-    /^\/groups(\/(\d+))\/members$/
-  end
+  root_path "/groups"
+  model group : Group
+  nested_path "/members"
 
   layout ApplicationLayout do
     def top_app_bar
@@ -17,8 +9,27 @@ class GroupMembersPage < ApplicationPage
     end
   end
 
-  def call
-    group = Group.find(id)
-    render Groups::MembersView.new(ctx, group)
+  view do
+    class BackLink
+      getter group : Group
+
+      def initialize(@group); end
+
+      ToHtml.instance_template do
+        a href: GroupPage.uri_path(group_id: group.id) do
+          Crumble::Material::Icon.new("arrow_back")
+        end
+      end
+    end
+
+    template do
+      Crumble::Material::TopAppBar.new(
+        leading_icon: BackLink.new(group),
+        headline: "Teilnehmer",
+        trailing_icons: [] of Nil,
+        type: :center_aligned
+      )
+      group.members_list_view.renderer(ctx)
+    end
   end
 end
