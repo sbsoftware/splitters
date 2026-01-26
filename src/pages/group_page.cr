@@ -59,11 +59,19 @@ class GroupPage < ApplicationPage
       end
     end
 
+    record WeightTemplatesLink, group : Group do
+      ToHtml.instance_template do
+        a href: GroupWeightTemplatesPage.uri_path(group_id: group.id) do
+          Crumble::Material::Icon.new("balance")
+        end
+      end
+    end
+
     def top_app_bar
       Crumble::Material::TopAppBar.new(
         leading_icon: BackLink,
         headline: group.top_app_bar_headline.renderer(ctx),
-        trailing_icons: [ShareIcon.new(group), MembersLink.new(group)]
+        trailing_icons: [ShareIcon.new(group), WeightTemplatesLink.new(group), MembersLink.new(group)]
       )
     end
 

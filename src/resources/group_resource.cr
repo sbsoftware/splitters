@@ -8,6 +8,7 @@ class GroupResource < ApplicationResource
     end
 
     group = Group.create(name: "Neue Gruppe", access_token: Base58.encode(Random::Secure.random_bytes(9)))
+    WeightTemplate.create(group_id: group.id, name: WeightTemplate::DEFAULT_NAME)
     GroupMembership.create(group_id: group.id, user_id: user.id, name: user.preferred_name)
 
     redirect self.class.uri_path(group.id)

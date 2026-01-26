@@ -2,6 +2,8 @@ require "./application_record"
 require "./expense"
 require "./group_membership"
 require "./reimbursement"
+require "./weight_template"
+require "./weight_template_membership"
 require "../resources/application_resource"
 
 class Group < ApplicationRecord
@@ -12,6 +14,7 @@ class Group < ApplicationRecord
   has_many_of GroupMembership
   has_many_of Expense
   has_many_of Reimbursement
+  has_many_of WeightTemplate
 
   css_class TopAppBarHeadlineWrapper
   css_class TopAppBarHeadlineButton
@@ -79,6 +82,16 @@ class Group < ApplicationRecord
         creditor = membership_by_id[debt.creditor_id]
         "#{debtor.display_name} schuldet #{creditor.display_name} #{format_euros(debt.amount_cents)}€"
       end
+  end
+
+  def default_weight_template : WeightTemplate?
+    weight_templates.order_by_id!.first?
+  end
+
+  def default_weight_template_membership_for(membership : GroupMembership) : WeightTemplateMembership?
+    return nil unless template = default_weight_template
+
+    WeightTemplateMembership.where(weight_template_id: template.id, group_membership_id: membership.id).first?
   end
 
   model_template :top_app_bar_headline, [TopAppBarHeadlineWrapper] do

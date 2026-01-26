@@ -1,5 +1,7 @@
 require "./application_record"
 require "./group"
+require "./weight_template"
+require "./weight_template_membership"
 
 class GroupMembership < ApplicationRecord
   column group_id : Int64
@@ -17,6 +19,27 @@ class GroupMembership < ApplicationRecord
     else
       "Anonym"
     end
+  end
+
+  def self.create(**args : **T) : self forall T
+    transaction do
+      record_id = insert_record(**args)
+      args_with_id = args.merge(id: record_id)
+      membership = new(**args_with_id)
+      group_id_value = membership.group_id.value
+
+      WeightTemplate.where(group_id: group_id_value).each do |template|
+        next if WeightTemplateMembership.where(weight_template_id: template.id, group_membership_id: membership.id).first?
+
+        WeightTemplateMembership.create(
+          weight_template_id: template.id,
+          group_membership_id: membership.id,
+          weight: membership.weight.value
+        )
+      end
+
+      membership
+    end.not_nil!
   end
 
   css_class NamePrompt
@@ -205,8 +228,14 @@ class GroupMembership < ApplicationRecord
         weight = nil
       end
 
-      if weight && weight.positive?
-        model.update(weight: weight)
+      return unless weight_value = weight
+      return unless weight_value.positive?
+
+      GroupMembership.transaction do
+        model.update(weight: weight_value)
+        if template_membership = model.group.default_weight_template_membership_for(model)
+          template_membership.update(weight: weight_value)
+        end
         model.group.expenses_summary_view.refresh!
       end
     end
