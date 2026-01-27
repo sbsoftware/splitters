@@ -11,6 +11,6 @@ class GroupResource < ApplicationResource
     WeightTemplate.create(group_id: group.id, name: WeightTemplate::DEFAULT_NAME)
     GroupMembership.create(group_id: group.id, user_id: user.id, name: user.preferred_name)
 
-    redirect self.class.uri_path(group.id)
+    redirect GroupPage.uri_path(group_id: group.id)
   end
 end
