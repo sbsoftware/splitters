@@ -229,7 +229,7 @@ class GroupMembership < ApplicationRecord
       end
 
       return unless weight_value = weight
-      return unless weight_value.positive?
+      return if weight_value < 0
 
       GroupMembership.transaction do
         model.update(weight: weight_value)

@@ -5,6 +5,7 @@ require "./weight_template_membership"
 
 class WeightTemplate < ApplicationRecord
   DEFAULT_NAME = "Standard"
+  DEFAULT_WEIGHT = 10
 
   column group_id : Int64
   column name : String
@@ -21,7 +22,7 @@ class WeightTemplate < ApplicationRecord
     group.default_weight_template.try(&.id) == id
   end
 
-  def self.create(**args : **T) : self forall T
+  def self.create(*, membership_weight : Int32? = nil, **args : **T) : self forall T
     transaction do
       args_with_timestamps =
         {% if @type.instance_vars.any? { |v| v.name == "created_at".id && v.annotation(Column) } &&
@@ -46,10 +47,11 @@ class WeightTemplate < ApplicationRecord
       GroupMembership.where(group_id: group_id_value).each do |membership|
         next if WeightTemplateMembership.where(weight_template_id: template.id, group_membership_id: membership.id).first?
 
+        membership_weight_value = membership_weight || membership.weight.value
         WeightTemplateMembership.create(
           weight_template_id: template.id,
           group_membership_id: membership.id,
-          weight: membership.weight.value
+          weight: membership_weight_value
         )
       end
 

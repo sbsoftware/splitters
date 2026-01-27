@@ -37,8 +37,7 @@ class GroupWeightTemplatesPage < ApplicationPage
       end
     end
 
-    css_class TemplatesGrid
-    css_class TemplateCardLink
+    css_class CreateTemplateRow
 
     template do
       Crumble::Material::TopAppBar.new(
@@ -48,36 +47,26 @@ class GroupWeightTemplatesPage < ApplicationPage
         type: :center_aligned
       )
 
-      div TemplatesGrid do
-        group.weight_templates.order_by_id!.each do |weight_template|
-          a TemplateCardLink, href: GroupWeightTemplatePage.uri_path(group.id, weight_template.id) do
-            Crumble::Material::Card.new.to_html do
-              Crumble::Material::Card::Title.new(weight_template.name)
-              Crumble::Material::Card::SecondaryText.new.to_html do
-                "#{weight_template.weight_template_memberships.count} Mitglied(er)"
-              end
-            end
-          end
-        end
+      group.weight_templates_list.renderer(ctx)
+
+      div CreateTemplateRow do
+        group.create_weight_template_action_template(ctx)
       end
     end
 
     style do
-      rule TemplatesGrid do
-        padding 16.px
-        display :grid
-        property(
-          "grid-template-columns",
-          "repeat(auto-fill, minmax(min(320px, 100%), 1fr))"
-        )
-        gap 16.px
-        box_sizing :border_box
-      end
+      rule CreateTemplateRow do
+        padding 0.px, 16.px, 16.px, 16.px
+        display :flex
+        justify_content :center
+        align_items :center
 
-      rule TemplateCardLink do
-        display :block
-        color :inherit
-        text_decoration :none
+        rule form do
+          display :flex
+          gap 8.px
+          width 100.percent
+          max_width 360.px
+        end
       end
     end
   end

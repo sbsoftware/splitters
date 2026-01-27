@@ -115,6 +115,123 @@ class Group < ApplicationRecord
     end
   end
 
+  css_class WeightTemplatesGrid
+  css_class WeightTemplateCardLink
+
+  model_template :weight_templates_list do
+    div WeightTemplatesGrid do
+      weight_templates.order_by_id!.each do |weight_template|
+        a WeightTemplateCardLink, href: GroupWeightTemplatePage.uri_path(id, weight_template.id) do
+          Crumble::Material::Card.new.to_html do
+            Crumble::Material::Card::Title.new(weight_template.name)
+            Crumble::Material::Card::SecondaryText.new.to_html do
+              "#{weight_template.weight_template_memberships.count} Mitglied(er)"
+            end
+          end
+        end
+      end
+    end
+  end
+
+  model_action :create_weight_template, weight_templates_list do
+    NAME_FIELD = "name"
+
+    css_class CreateTemplateInput
+    css_class CreateTemplateButton
+
+    form do
+      field name : String
+
+      def valid?
+        super
+
+        errors = @errors.not_nil!
+        if (value = name) && value.strip.empty?
+          errors << NAME_FIELD
+        end
+
+        errors.none?
+      end
+
+      def normalized_name : String?
+        name.try(&.strip)
+      end
+
+      ToHtml.instance_template do
+        input CreateTemplateInput, type: :text, name: NAME_FIELD, value: name.to_s, placeholder: "Name", required: true
+      end
+    end
+
+    @submitted_form : Form? = nil
+
+    def form
+      @submitted_form || Form.new(ctx, name: "")
+    end
+
+    before do
+      return 403 unless user_id = ctx.session.user_id
+      return 403 unless model.group_memberships.any? { |gm| gm.user_id == user_id }
+
+      true
+    end
+
+    controller do
+      unless body = ctx.request.body
+        ctx.response.status = :bad_request
+        return
+      end
+
+      @submitted_form = Form.from_www_form(ctx, body.gets_to_end)
+      form = @submitted_form.not_nil!
+
+      unless form.valid?
+        ctx.response.status = :unprocessable_entity
+        return
+      end
+
+      new_name = form.normalized_name
+      return unless new_name
+
+      template = WeightTemplate.create(
+        membership_weight: WeightTemplate::DEFAULT_WEIGHT,
+        group_id: model.id,
+        name: new_name
+      )
+
+      redirect GroupWeightTemplatePage.uri_path(model.id, template.id)
+    end
+
+    view do
+      template do
+        action_form.to_html do
+          button CreateTemplateButton, type: :submit do
+            Crumble::Material::Icon.new("add")
+          end
+        end
+      end
+
+      style do
+        rule CreateTemplateInput do
+          flex_grow 1
+          padding 8.px
+          border 1.px, :solid, :silver
+          border_radius 6.px
+        end
+
+        rule CreateTemplateButton do
+          display :flex
+          align_items :center
+          justify_content :center
+          width 40.px
+          height 40.px
+          border 1.px, :solid, :black
+          border_radius 6.px
+          background_color :white
+        end
+      end
+    end
+  end
+
   model_action :update_name, top_app_bar_headline do
     css_class FormContainer
     css_class FieldRow
@@ -643,6 +760,23 @@ class Group < ApplicationRecord
       font_size :inherit
       font_weight :inherit
       cursor :pointer
+    end
+
+    rule WeightTemplatesGrid do
+      padding 16.px
+      display :grid
+      property(
+        "grid-template-columns",
+        "repeat(auto-fill, minmax(min(320px, 100%), 1fr))"
+      )
+      gap 16.px
+      box_sizing :border_box
+    end
+
+    rule WeightTemplateCardLink do
+      display :block
+      color :inherit
+      text_decoration :none
     end
   end
 
