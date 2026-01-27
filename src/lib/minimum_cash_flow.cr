@@ -1,6 +1,7 @@
 module MinimumCashFlow
   # A single directed payment requirement: `debtor_id` must pay `creditor_id` `amount_cents`.
   record Debt, debtor_id : Int64, creditor_id : Int64, amount_cents : Int32
+  record WeightedExpense, paid_by_member_id : Int64, amount_cents : Int32, member_weights : Hash(Int64, Int32)
 
   # Computes an easy-to-follow set of pairwise payments that settles all expenses for the group.
   #
@@ -12,6 +13,37 @@ module MinimumCashFlow
   def self.pairwise_debts(member_weights : Hash(Int64, Int32), expenses : Array(Tuple(Int64, Int32))) : Array(Debt)
     balances = balances_from_expenses(member_weights, expenses)
     pairwise_debts_from_balances(balances)
+  end
+
+  def self.balances_from_weighted_expenses(expenses : Array(WeightedExpense)) : Hash(Int64, Int32)
+    return {} of Int64 => Int32 if expenses.empty?
+
+    member_ids = Set(Int64).new
+    expenses.each do |expense|
+      expense.member_weights.each_key do |member_id|
+        member_ids << member_id
+      end
+    end
+
+    return {} of Int64 => Int32 if member_ids.size < 2
+
+    balances = Hash(Int64, Int32).new(0)
+    member_ids.each { |member_id| balances[member_id] = 0 }
+
+    expenses.each do |expense|
+      member_weights = expense.member_weights
+      next if member_weights.empty?
+      next unless member_weights.has_key?(expense.paid_by_member_id)
+
+      owed_by_member = split_amount_by_weight(expense.amount_cents, member_weights)
+
+      balances[expense.paid_by_member_id] += expense.amount_cents
+      owed_by_member.each do |member_id, amount|
+        balances[member_id] -= amount
+      end
+    end
+
+    balances
   end
 
   def self.balances_from_expenses(member_weights : Hash(Int64, Int32), expenses : Array(Tuple(Int64, Int32))) : Hash(Int64, Int32)

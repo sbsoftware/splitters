@@ -42,9 +42,25 @@ class Group < ApplicationRecord
     balances = Hash(Int64, Int32).new(0)
     member_weights.keys.each { |member_id| balances[member_id] = 0 }
 
-    expenses_input = expenses.map { |e| {e.group_membership_id.value, e.amount.value} }
+    template_weights_by_id = weight_template_weights_by_id(memberships, member_weights)
+    default_template_id = default_weight_template.try(&.id.value)
+    fallback_template_id = default_template_id || template_weights_by_id.keys.first?
+
+    weighted_expenses = [] of MinimumCashFlow::WeightedExpense
+    expenses.each do |expense|
+      template_id = expense.effective_weight_template_id(fallback_template_id)
+      member_weights_for_expense = template_id ? template_weights_by_id[template_id]? : nil
+      member_weights_for_expense ||= member_weights
+
+      weighted_expenses << MinimumCashFlow::WeightedExpense.new(
+        paid_by_member_id: expense.group_membership_id.value,
+        amount_cents: expense.amount.value,
+        member_weights: member_weights_for_expense
+      )
+    end
+
     MinimumCashFlow
-      .balances_from_expenses(member_weights: member_weights, expenses: expenses_input)
+      .balances_from_weighted_expenses(weighted_expenses)
       .each do |member_id, balance|
         balances[member_id] = balance
       end
@@ -60,6 +76,26 @@ class Group < ApplicationRecord
     end
 
     balances
+  end
+
+  private def weight_template_weights_by_id(
+    memberships : Array(GroupMembership),
+    fallback_weights : Hash(Int64, Int32)
+  ) : Hash(Int64, Hash(Int64, Int32))
+    template_weights_by_id = {} of Int64 => Hash(Int64, Int32)
+
+    weight_templates.to_a.each do |template|
+      weights = fallback_weights.dup
+      template.weight_template_memberships.each do |template_membership|
+        member_id = template_membership.group_membership_id.value
+        next unless weights.has_key?(member_id)
+
+        weights[member_id] = template_membership.weight.value
+      end
+      template_weights_by_id[template.id.value] = weights
+    end
+
+    template_weights_by_id
   end
 
   def expense_debt_statements : Array(String)
@@ -462,11 +498,18 @@ class Group < ApplicationRecord
 
       amount_cents = (amount * 100).floor.to_i
 
+      weight_template = model.default_weight_template || model.weight_templates.order_by_id!.first?
+      unless weight_template
+        ctx.response.status = :unprocessable_entity
+        return
+      end
+
       self.class.child_class.create(
         **parent_params,
         description: description,
         amount: amount_cents,
-        group_membership_id: group_membership.id
+        group_membership_id: group_membership.id,
+        weight_template_id: weight_template.id
       )
 
       ctx.response.status = :created
@@ -700,6 +743,7 @@ class Group < ApplicationRecord
 
   style do
     EXPENSE_CARD_MIN_WIDTH = 376.px
+    EXPENSE_CARD_MIN_HEIGHT = 128.px
 
     rule ExpensesSummaryBox do
       max_width 800.px
@@ -739,6 +783,7 @@ class Group < ApplicationRecord
 
       rule Crumble::Material::Card::Card do
         width EXPENSE_CARD_MIN_WIDTH
+        min_height EXPENSE_CARD_MIN_HEIGHT
       end
     end
 
@@ -823,6 +868,12 @@ class Group < ApplicationRecord
               end
               strong do
                 expense.group_membership.name
+              end
+            end
+            Crumble::Material::Card::SecondaryText.new.to_html do
+              div Expense::ExpenseWeightTemplateLine do
+                Crumble::Material::Icon.new("balance")
+                expense.set_weight_template_action_template(ctx)
               end
             end
           end

@@ -45,9 +45,11 @@ class WeightTemplateMembership < ApplicationRecord
         model.update(weight: weight_value)
         if model.weight_template.default_template?
           model.group_membership.update(weight: weight_value)
-          model.group.expenses_summary_view.refresh!
         end
       end
+
+      model.group.expenses_summary_view.refresh!
+      model.group.expenses_view.refresh!
     end
 
     view do
