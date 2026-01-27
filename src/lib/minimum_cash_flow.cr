@@ -3,18 +3,8 @@ module MinimumCashFlow
   record Debt, debtor_id : Int64, creditor_id : Int64, amount_cents : Int32
   record WeightedExpense, paid_by_member_id : Int64, amount_cents : Int32, member_weights : Hash(Int64, Int32)
 
-  # Computes an easy-to-follow set of pairwise payments that settles all expenses for the group.
-  #
-  # - `member_weights`: group membership id => weight (e.g. 10 means "1.0x")
-  # - `expenses`: tuples of `{paid_by_member_id, amount_cents}`
-  #
-  # This method deliberately splits the *total* amount once to avoid rounding drift that would
-  # occur if each expense was rounded individually.
-  def self.pairwise_debts(member_weights : Hash(Int64, Int32), expenses : Array(Tuple(Int64, Int32))) : Array(Debt)
-    balances = balances_from_expenses(member_weights, expenses)
-    pairwise_debts_from_balances(balances)
-  end
-
+  # Computes net balances from per-expense weight splits.
+  # Positive means the member should receive money; negative means they owe.
   def self.balances_from_weighted_expenses(expenses : Array(WeightedExpense)) : Hash(Int64, Int32)
     return {} of Int64 => Int32 if expenses.empty?
 
@@ -46,40 +36,7 @@ module MinimumCashFlow
     balances
   end
 
-  def self.balances_from_expenses(member_weights : Hash(Int64, Int32), expenses : Array(Tuple(Int64, Int32))) : Hash(Int64, Int32)
-    return {} of Int64 => Int32 if member_weights.size < 2 || expenses.empty?
-
-    member_ids = member_weights.keys.sort
-    member_ids_set = member_ids.to_set
-
-    # Ignore expenses from unknown payers (e.g. stale data) so we don't crash or skew results.
-    valid_expenses = expenses.select { |paid_by_id, _| member_ids_set.includes?(paid_by_id) }
-    return {} of Int64 => Int32 if valid_expenses.empty?
-
-    # Total sum in cents (guard overflow because we return Int32 cent amounts in results).
-    total_amount_cents_i64 = valid_expenses.sum(0_i64) { |(_, amount_cents)| amount_cents.to_i64 }
-    raise "Total amount too large" if total_amount_cents_i64 > Int32::MAX
-    total_amount_cents = total_amount_cents_i64.to_i32
-
-    # "Owed" is computed from the total to keep the remainder distribution stable and minimal.
-    owed_by_member = split_amount_by_weight(total_amount_cents, member_weights)
-
-    # Sum up how much each member actually paid.
-    paid_by_member = Hash(Int64, Int32).new(0)
-    valid_expenses.each do |paid_by_id, amount_cents|
-      paid_by_member[paid_by_id] += amount_cents
-    end
-
-    balances = Hash(Int64, Int32).new(0)
-    member_ids.each do |member_id|
-      paid = paid_by_member[member_id]? || 0
-      owed = owed_by_member[member_id]
-      balances[member_id] = paid - owed
-    end
-
-    balances
-  end
-
+  # Turns balances into a minimal, deterministic set of pairwise payments.
   def self.pairwise_debts_from_balances(balances : Hash(Int64, Int32)) : Array(Debt)
     return [] of Debt if balances.empty?
 

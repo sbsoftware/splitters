@@ -41,15 +41,22 @@ describe MinimumCashFlow do
     end
   end
 
-  describe ".pairwise_debts" do
+  describe ".balances_from_weighted_expenses" do
     it "computes a single debt for a single expense" do
       member_weights = {
         1_i64 => 10,
         2_i64 => 10,
       }
-      expenses = [{2_i64, 700}]
+      expenses = [
+        MinimumCashFlow::WeightedExpense.new(
+          paid_by_member_id: 2_i64,
+          amount_cents: 700,
+          member_weights: member_weights
+        ),
+      ]
 
-      MinimumCashFlow.pairwise_debts(member_weights: member_weights, expenses: expenses).should eq([
+      balances = MinimumCashFlow.balances_from_weighted_expenses(expenses)
+      MinimumCashFlow.pairwise_debts_from_balances(balances).should eq([
         MinimumCashFlow::Debt.new(debtor_id: 1_i64, creditor_id: 2_i64, amount_cents: 350),
       ])
     end
@@ -59,9 +66,21 @@ describe MinimumCashFlow do
         1_i64 => 10,
         2_i64 => 10,
       }
-      expenses = [{1_i64, 1000}, {2_i64, 700}]
+      expenses = [
+        MinimumCashFlow::WeightedExpense.new(
+          paid_by_member_id: 1_i64,
+          amount_cents: 1000,
+          member_weights: member_weights
+        ),
+        MinimumCashFlow::WeightedExpense.new(
+          paid_by_member_id: 2_i64,
+          amount_cents: 700,
+          member_weights: member_weights
+        ),
+      ]
 
-      MinimumCashFlow.pairwise_debts(member_weights: member_weights, expenses: expenses).should eq([
+      balances = MinimumCashFlow.balances_from_weighted_expenses(expenses)
+      MinimumCashFlow.pairwise_debts_from_balances(balances).should eq([
         MinimumCashFlow::Debt.new(debtor_id: 2_i64, creditor_id: 1_i64, amount_cents: 150),
       ])
     end
@@ -72,9 +91,16 @@ describe MinimumCashFlow do
         2_i64 => 10,
         3_i64 => 20,
       }
-      expenses = [{1_i64, 100}]
+      expenses = [
+        MinimumCashFlow::WeightedExpense.new(
+          paid_by_member_id: 1_i64,
+          amount_cents: 100,
+          member_weights: member_weights
+        ),
+      ]
 
-      MinimumCashFlow.pairwise_debts(member_weights: member_weights, expenses: expenses).should eq([
+      balances = MinimumCashFlow.balances_from_weighted_expenses(expenses)
+      MinimumCashFlow.pairwise_debts_from_balances(balances).should eq([
         MinimumCashFlow::Debt.new(debtor_id: 2_i64, creditor_id: 1_i64, amount_cents: 25),
         MinimumCashFlow::Debt.new(debtor_id: 3_i64, creditor_id: 1_i64, amount_cents: 50),
       ])
@@ -85,9 +111,21 @@ describe MinimumCashFlow do
         1_i64 => 10,
         2_i64 => 10,
       }
-      expenses = [{999_i64, 500}, {2_i64, 700}]
+      expenses = [
+        MinimumCashFlow::WeightedExpense.new(
+          paid_by_member_id: 999_i64,
+          amount_cents: 500,
+          member_weights: member_weights
+        ),
+        MinimumCashFlow::WeightedExpense.new(
+          paid_by_member_id: 2_i64,
+          amount_cents: 700,
+          member_weights: member_weights
+        ),
+      ]
 
-      MinimumCashFlow.pairwise_debts(member_weights: member_weights, expenses: expenses).should eq([
+      balances = MinimumCashFlow.balances_from_weighted_expenses(expenses)
+      MinimumCashFlow.pairwise_debts_from_balances(balances).should eq([
         MinimumCashFlow::Debt.new(debtor_id: 1_i64, creditor_id: 2_i64, amount_cents: 350),
       ])
     end
@@ -97,16 +135,35 @@ describe MinimumCashFlow do
         1_i64 => 10,
         2_i64 => 10,
       }
-      expenses = [{999_i64, 500}]
+      expenses = [
+        MinimumCashFlow::WeightedExpense.new(
+          paid_by_member_id: 999_i64,
+          amount_cents: 500,
+          member_weights: member_weights
+        ),
+      ]
 
-      MinimumCashFlow.pairwise_debts(member_weights: member_weights, expenses: expenses).should eq([] of MinimumCashFlow::Debt)
+      balances = MinimumCashFlow.balances_from_weighted_expenses(expenses)
+      balances.should eq({
+        1_i64 => 0,
+        2_i64 => 0,
+      })
+      MinimumCashFlow.pairwise_debts_from_balances(balances).should eq([] of MinimumCashFlow::Debt)
     end
 
     it "returns an empty list with fewer than two members" do
       member_weights = {1_i64 => 10}
-      expenses = [{1_i64, 500}]
+      expenses = [
+        MinimumCashFlow::WeightedExpense.new(
+          paid_by_member_id: 1_i64,
+          amount_cents: 500,
+          member_weights: member_weights
+        ),
+      ]
 
-      MinimumCashFlow.pairwise_debts(member_weights: member_weights, expenses: expenses).should eq([] of MinimumCashFlow::Debt)
+      balances = MinimumCashFlow.balances_from_weighted_expenses(expenses)
+      balances.should eq({} of Int64 => Int32)
+      MinimumCashFlow.pairwise_debts_from_balances(balances).should eq([] of MinimumCashFlow::Debt)
     end
 
     it "raises when member weights are invalid" do
@@ -114,10 +171,16 @@ describe MinimumCashFlow do
         1_i64 => 0,
         2_i64 => 0,
       }
-      expenses = [{1_i64, 100}]
+      expenses = [
+        MinimumCashFlow::WeightedExpense.new(
+          paid_by_member_id: 1_i64,
+          amount_cents: 100,
+          member_weights: member_weights
+        ),
+      ]
 
       expect_raises(Exception, "Total weight must be positive") do
-        MinimumCashFlow.pairwise_debts(member_weights: member_weights, expenses: expenses)
+        MinimumCashFlow.balances_from_weighted_expenses(expenses)
       end
     end
   end
