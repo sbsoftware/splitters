@@ -25,5 +25,5 @@ dependencies:
   crumble-material:
     github: sbsoftware/crumble-material
     version: ">= 0.5.0"
-  base58:
-    github: wyhaines/base58.cr
+  crumble-crababel:
+    github: sbsoftware/crumble-crababel

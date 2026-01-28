@@ -4,9 +4,17 @@ shards:
     git: https://github.com/wyhaines/base58.cr.git
     version: 0.2.2
 
+  crababel:
+    git: https://github.com/sbsoftware/crababel.git
+    version: 0.1.0
+
   crumble:
     git: https://github.com/sbsoftware/crumble.git
     version: 0.29.1
+
+  crumble-crababel:
+    git: https://github.com/sbsoftware/crumble-crababel.git
+    version: 0.1.0
 
   crumble-material:
     git: https://github.com/sbsoftware/crumble-material.git
@@ -24,6 +32,10 @@ shards:
     git: https://github.com/sbsoftware/crumble-turbo.git
     version: 0.18.0
 
+  crygen:
+    git: https://github.com/tamdaz/crygen.git
+    version: 1.3.0
+
   css:
     git: https://github.com/sbsoftware/css.cr.git
     version: 0.2.0
@@ -39,6 +51,10 @@ shards:
   debug:
     git: https://github.com/sija/debug.cr.git
     version: 2.0.4
+
+  http_accept:
+    git: https://github.com/becauseofprog/http_accept.git
+    version: 0.1.0
 
   js:
     git: https://github.com/sbsoftware/js.cr.git

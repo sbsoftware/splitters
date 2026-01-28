@@ -1,0 +1,20 @@
+en:
+  group:
+    create_expense_action:
+      form:
+        description: "Description:"
+        amount: "Amount in €:"
+    create_reimbursement_action:
+      form:
+        amount: "Amount in €:"
+        recipient_membership_id: "To:"
+de:
+  group:
+    create_expense_action:
+      form:
+        description: "Beschreibung:"
+        amount: "Betrag in €:"
+    create_reimbursement_action:
+      form:
+        amount: "Betrag in €:"
+        recipient_membership_id: "An:"
