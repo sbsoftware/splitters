@@ -23,6 +23,15 @@ class Group < ApplicationRecord
     (amount_cents.to_f / 100).format(",", ".", decimal_places: 2)
   end
 
+  def amount_input_value(amount_cents : Int32 | Int64) : String
+    negative = amount_cents < 0
+    absolute = amount_cents.abs
+    euros = absolute // 100
+    cents = absolute % 100
+    value = "#{euros}.#{cents.to_s.rjust(2, '0')}"
+    negative ? "-#{value}" : value
+  end
+
   def ledger_entries : Array(Expense | Reimbursement)
     entries = expenses.to_a + reimbursements.to_a
     entries.sort_by do |entry|
@@ -98,25 +107,17 @@ class Group < ApplicationRecord
     template_weights_by_id
   end
 
-  def expense_debt_statements : Array(String)
-    memberships = group_memberships.to_a
-    return [] of String if memberships.size < 2
-
-    membership_by_id = memberships.to_h { |gm| {gm.id.value, gm} }
+  def expense_debts(
+    memberships : Array(GroupMembership) = group_memberships.to_a
+  ) : Array(MinimumCashFlow::Debt)
+    return [] of MinimumCashFlow::Debt if memberships.size < 2
 
     balances = balances_with_reimbursements(memberships)
 
     MinimumCashFlow
       .pairwise_debts_from_balances(balances)
       .sort_by do |debt|
-        debtor = membership_by_id[debt.debtor_id]
-        creditor = membership_by_id[debt.creditor_id]
-        {debtor.display_name, creditor.display_name}
-      end
-      .map do |debt|
-        debtor = membership_by_id[debt.debtor_id]
-        creditor = membership_by_id[debt.creditor_id]
-        "#{debtor.display_name} schuldet #{creditor.display_name} #{format_euros(debt.amount_cents)}€"
+        {debt.debtor_id, debt.creditor_id}
       end
   end
 
@@ -738,6 +739,9 @@ class Group < ApplicationRecord
   css_class ExpensesContainer
   css_class ExpensesSummaryBox
   css_class ExpensesSummaryLine
+  css_class ExpensesSummaryStatement
+  css_class ExpensesSummaryPayForm
+  css_class ExpensesSummaryPayButton
   css_class ExpensesSummaryTotal
   css_class ReimbursementCard
 
@@ -760,7 +764,29 @@ class Group < ApplicationRecord
     end
 
     rule ExpensesSummaryLine do
+      display :flex
+      align_items :center
+      justify_content :space_between
+      gap 12.px
       margin 0.px
+      flex_wrap :wrap
+    end
+
+    rule ExpensesSummaryStatement do
+      flex_grow 1
+    end
+
+    rule ExpensesSummaryPayForm do
+      flex_shrink 0
+    end
+
+    rule ExpensesSummaryPayButton do
+      padding 6.px, 12.px
+      border 1.px, :solid, :black
+      border_radius 6.px
+      background_color :white
+      cursor :pointer
+      font_size 0.9.rem
     end
 
     rule ExpensesSummaryTotal do
@@ -837,13 +863,37 @@ class Group < ApplicationRecord
       if entries.empty?
         p { "Noch keine Ausgaben." }
       else
-        statements = expense_debt_statements
-        if statements.empty?
+        memberships = group_memberships.to_a
+        membership_by_id = memberships.to_h { |membership| {membership.id.value, membership} }
+        debt_entries = expense_debts(memberships)
+        if debt_entries.empty?
           p { "Alle sind ausgeglichen." }
         else
-          statements.each do |statement|
+          current_membership_id = memberships.find { |membership| membership.user_id == ctx.session.user_id }.try(&.id.value)
+          debt_entries.each do |debt|
+            debtor = membership_by_id[debt.debtor_id]
+            creditor = membership_by_id[debt.creditor_id]
             div ExpensesSummaryLine do
-              statement
+              span ExpensesSummaryStatement do
+                "#{debtor.display_name} schuldet #{creditor.display_name} #{format_euros(debt.amount_cents)}€"
+              end
+              if current_membership_id && debt.debtor_id == current_membership_id
+                form ExpensesSummaryPayForm, action: Group::CreateReimbursementAction.uri_path(id), method: "POST" do
+                  input(
+                    type: :hidden,
+                    name: Group::CreateReimbursementAction::AMOUNT_FIELD,
+                    value: amount_input_value(debt.amount_cents)
+                  )
+                  input(
+                    type: :hidden,
+                    name: Group::CreateReimbursementAction::RECIPIENT_FIELD,
+                    value: debt.creditor_id
+                  )
+                  button ExpensesSummaryPayButton, type: :submit do
+                    "Ausgleichen"
+                  end
+                end
+              end
             end
           end
         end
