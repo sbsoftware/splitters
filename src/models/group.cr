@@ -4,7 +4,7 @@ require "./group_membership"
 require "./reimbursement"
 require "./weight_template"
 require "./weight_template_membership"
-require "../resources/application_resource"
+require "../pages/application_page"
 
 class Group < ApplicationRecord
   column name : String

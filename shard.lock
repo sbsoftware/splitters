@@ -22,7 +22,7 @@ shards:
 
   crumble-turbo:
     git: https://github.com/sbsoftware/crumble-turbo.git
-    version: 0.17.2
+    version: 0.18.0
 
   css:
     git: https://github.com/sbsoftware/css.cr.git
@@ -90,5 +90,5 @@ shards:
 
   to_html:
     git: https://github.com/sbsoftware/to_html.cr.git
-    version: 1.5.2
+    version: 1.6.0
 
