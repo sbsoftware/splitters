@@ -89,7 +89,7 @@ class Group < ApplicationRecord
 
   private def weight_template_weights_by_id(
     memberships : Array(GroupMembership),
-    fallback_weights : Hash(Int64, Int32)
+    fallback_weights : Hash(Int64, Int32),
   ) : Hash(Int64, Hash(Int64, Int32))
     template_weights_by_id = {} of Int64 => Hash(Int64, Int32)
 
@@ -108,7 +108,7 @@ class Group < ApplicationRecord
   end
 
   def expense_debts(
-    memberships : Array(GroupMembership) = group_memberships.to_a
+    memberships : Array(GroupMembership) = group_memberships.to_a,
   ) : Array(MinimumCashFlow::Debt)
     return [] of MinimumCashFlow::Debt if memberships.size < 2
 
@@ -497,7 +497,7 @@ class Group < ApplicationRecord
         return
       end
 
-      amount_cents = (amount * 100).floor.to_i
+      amount_cents = (amount * 100).round.to_i
 
       weight_template = model.default_weight_template || model.weight_templates.order_by_id!.first?
       unless weight_template
@@ -616,7 +616,7 @@ class Group < ApplicationRecord
         return
       end
 
-      amount_cents = (amount * 100).floor.to_i
+      amount_cents = (amount * 100).round.to_i
 
       self.class.child_class.create(
         **parent_params,
@@ -746,7 +746,7 @@ class Group < ApplicationRecord
   css_class ReimbursementCard
 
   style do
-    EXPENSE_CARD_MIN_WIDTH = 376.px
+    EXPENSE_CARD_MIN_WIDTH  = 376.px
     EXPENSE_CARD_MIN_HEIGHT = 128.px
 
     rule ExpensesSummaryBox do
@@ -814,6 +814,8 @@ class Group < ApplicationRecord
     end
 
     rule ReimbursementCard do
+      position :relative
+
       rule Crumble::Material::Card::Card do
         background_color "#d8f5d0"
       end
@@ -930,6 +932,7 @@ class Group < ApplicationRecord
         elsif entry.is_a?(Reimbursement)
           reimbursement = entry.as(Reimbursement)
           div ReimbursementCard do
+            reimbursement.delete_from_card_action_template(ctx)
             Crumble::Material::Card.new.to_html do
               payer = reimbursement.payer_membership.display_name
               recipient = reimbursement.recipient_membership.display_name
