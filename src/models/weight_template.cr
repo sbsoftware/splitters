@@ -4,7 +4,7 @@ require "./group_membership"
 require "./weight_template_membership"
 
 class WeightTemplate < ApplicationRecord
-  DEFAULT_NAME = "Standard"
+  DEFAULT_NAME   = "Standard"
   DEFAULT_WEIGHT = 10
 
   column group_id : Int64
@@ -26,7 +26,7 @@ class WeightTemplate < ApplicationRecord
     transaction do
       args_with_timestamps =
         {% if @type.instance_vars.any? { |v| v.name == "created_at".id && v.annotation(Column) } &&
-              @type.instance_vars.any? { |v| v.name == "updated_at".id && v.annotation(Column) } %}
+                @type.instance_vars.any? { |v| v.name == "updated_at".id && v.annotation(Column) } %}
           args.merge(
             created_at: args[:created_at]? || Time.utc,
             updated_at: args[:updated_at]? || Time.utc

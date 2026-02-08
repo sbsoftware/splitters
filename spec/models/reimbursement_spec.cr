@@ -20,7 +20,7 @@ module ReimbursementSpec
       payer_ctx.session.update!(user_id: payer_user.id.value)
 
       card_html = Reimbursement::DeleteFromCardAction.new(payer_ctx, reimbursement).action_template.to_html
-      card_html.includes?("window.confirm('Rückerstattung wirklich löschen?')").should be_true
+      card_html.includes?("data-crumble--turbo--custom-action-trigger--action-trigger-confirm-prompt-value=\"Rückerstattung wirklich löschen?\"").should be_true
       card_html.includes?(Reimbursement::DeleteFromCardAction.uri_path(reimbursement.id.value)).should be_true
 
       recipient_ctx = Crumble::Server::TestRequestContext.new(method: "GET", resource: "/")

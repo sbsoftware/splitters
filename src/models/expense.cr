@@ -7,12 +7,22 @@ class Expense < ApplicationRecord
   column created_at : Time
   column updated_at : Time
 
+  css_class ExpenseCard
+
   css_class ExpenseWeightTemplateLine
   css_class ExpenseWeightTemplateButtons
   css_class ExpenseWeightTemplateButton
   css_class ExpenseWeightTemplateButtonActive
 
+  css_class ExpenseDeleteCardAction
+  css_class ExpenseDeleteCardButton
+  css_class ExpenseDeleteError
+
   style do
+    rule ExpenseCard do
+      position :relative
+    end
+
     rule ExpenseWeightTemplateLine do
       display :flex
       align_items :center
@@ -42,6 +52,40 @@ class Expense < ApplicationRecord
     rule ExpenseWeightTemplateButtonActive do
       background_color "#cfe8ff"
     end
+
+    rule ExpenseDeleteCardAction do
+      position :absolute
+      top 8.px
+      right 8.px
+      z_index 2
+      display :flex
+      flex_direction :column
+      align_items :flex_end
+
+      rule Crumble::Turbo::CustomActionTrigger::Outer, Crumble::Turbo::CustomActionTrigger::Inner do
+        width :auto
+        height :auto
+      end
+    end
+
+    rule ExpenseDeleteCardButton do
+      width 24.px
+      height 24.px
+      border 1.px, :solid, :black
+      border_radius 999.px
+      background_color :white
+      cursor :pointer
+      line_height 1
+      padding 0.px
+      font_size 0.9.rem
+    end
+
+    rule ExpenseDeleteError do
+      margin_top 6.px
+      font_size 0.75.rem
+      color "#a40000"
+      text_align :right
+    end
   end
 
   def group
@@ -54,6 +98,52 @@ class Expense < ApplicationRecord
 
   def effective_weight_template_id(fallback_id : Int64?) : Int64?
     weight_template_id.try(&.value) || fallback_id
+  end
+
+  model_action :delete_from_card, {group.expenses_view, group.expenses_summary_view} do
+    @delete_error_message : String? = nil
+
+    policy do
+      can_submit do
+        return false unless user_id = ctx.session.user_id
+
+        model.group_membership.user_id.value == user_id
+      end
+
+      can_view do
+        can_submit?
+      end
+    end
+
+    controller do
+      begin
+        model.destroy
+      rescue Exception
+        @delete_error_message = "Löschen fehlgeschlagen. Bitte erneut versuchen."
+        ctx.response.status = :unprocessable_entity
+      end
+    end
+
+    def delete_error_message : String?
+      @delete_error_message
+    end
+
+    view do
+      template do
+        div ExpenseDeleteCardAction do
+          custom_action_trigger(confirm_prompt: "Ausgabe wirklich löschen?").to_html do
+            button ExpenseDeleteCardButton, type: :button, title: "Ausgabe löschen" do
+              "x"
+            end
+          end
+          if error_message = action.delete_error_message
+            div ExpenseDeleteError do
+              error_message
+            end
+          end
+        end
+      end
+    end
   end
 
   model_action :set_weight_template, {group.expenses_view, group.expenses_summary_view} do

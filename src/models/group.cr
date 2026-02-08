@@ -908,24 +908,27 @@ class Group < ApplicationRecord
       ledger_entries.each do |entry|
         if entry.is_a?(Expense)
           expense = entry.as(Expense)
-          Crumble::Material::Card.new.to_html do
-            Crumble::Material::Card::Title.new(expense.description)
-            Crumble::Material::Card::SecondaryText.new.to_html do
-              span do
-                (expense.amount.to_f / 100).format(",", ".", decimal_places: 2)
-                " € "
+          div Expense::ExpenseCard do
+            expense.delete_from_card_action_template(ctx)
+            Crumble::Material::Card.new.to_html do
+              Crumble::Material::Card::Title.new(expense.description)
+              Crumble::Material::Card::SecondaryText.new.to_html do
+                span do
+                  (expense.amount.to_f / 100).format(",", ".", decimal_places: 2)
+                  " € "
+                end
+                span do
+                  "bezahlt von "
+                end
+                strong do
+                  expense.group_membership.name
+                end
               end
-              span do
-                "bezahlt von "
-              end
-              strong do
-                expense.group_membership.name
-              end
-            end
-            Crumble::Material::Card::SecondaryText.new.to_html do
-              div Expense::ExpenseWeightTemplateLine do
-                Crumble::Material::Icon.new("balance")
-                expense.set_weight_template_action_template(ctx)
+              Crumble::Material::Card::SecondaryText.new.to_html do
+                div Expense::ExpenseWeightTemplateLine do
+                  Crumble::Material::Icon.new("balance")
+                  expense.set_weight_template_action_template(ctx)
+                end
               end
             end
           end

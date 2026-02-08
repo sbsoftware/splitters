@@ -7,7 +7,6 @@ class Reimbursement < ApplicationRecord
   column updated_at : Time
 
   css_class DeleteCardAction
-  css_class DeleteCardForm
   css_class DeleteCardButton
   css_class DeleteError
 
@@ -23,22 +22,18 @@ class Reimbursement < ApplicationRecord
     GroupMembership.find(recipient_membership_id)
   end
 
-  def editable_by?(user_id : Int64?) : Bool
-    return false unless current_user_id = user_id
-
-    payer_membership.user_id.value == current_user_id
-  end
-
   model_action :delete_from_card, {group.expenses_view, group.expenses_summary_view} do
     @delete_error_message : String? = nil
 
     policy do
-      can_view do
-        model.editable_by?(ctx.session.user_id)
+      can_submit do
+        return false unless user_id = ctx.session.user_id
+
+        model.payer_membership.user_id.value == user_id
       end
 
-      can_submit do
-        model.editable_by?(ctx.session.user_id)
+      can_view do
+        can_submit?
       end
     end
 
@@ -58,8 +53,8 @@ class Reimbursement < ApplicationRecord
     view do
       template do
         div DeleteCardAction do
-          form DeleteCardForm, action: action.uri_path, method: "POST", onsubmit: "return window.confirm('Rückerstattung wirklich löschen?');" do
-            button DeleteCardButton, type: :submit, title: "Rückerstattung löschen" do
+          custom_action_trigger(confirm_prompt: "Rückerstattung wirklich löschen?").to_html do
+            button DeleteCardButton, type: :button, title: "Rückerstattung löschen" do
               "x"
             end
           end
@@ -82,10 +77,11 @@ class Reimbursement < ApplicationRecord
       display :flex
       flex_direction :column
       align_items :flex_end
-    end
 
-    rule DeleteCardForm do
-      margin 0.px
+      rule Crumble::Turbo::CustomActionTrigger::Outer, Crumble::Turbo::CustomActionTrigger::Inner do
+        width :auto
+        height :auto
+      end
     end
 
     rule DeleteCardButton do
