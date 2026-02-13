@@ -272,7 +272,6 @@ class GroupMembership < ApplicationRecord
     css_class RemoveButton
     css_class RemoveError
 
-    HAS_EXPENSES_ERROR  = "Dieses Mitglied kann nicht entfernt werden, weil bereits Ausgaben erfasst wurden."
     REMOVE_FAILED_ERROR = "Entfernen fehlgeschlagen. Bitte erneut versuchen."
 
     @remove_error_message : String? = nil
@@ -281,7 +280,12 @@ class GroupMembership < ApplicationRecord
       can_submit do
         return false unless user_id = ctx.session.user_id
 
-        model.group.group_memberships.any? { |membership| membership.user_id == user_id }
+        return false unless model.group.group_memberships.any? { |membership| membership.user_id == user_id }
+
+        # Keep historic expenses intact by disallowing removal once expenses exist.
+        return false if Expense.where(group_membership_id: model.id).first?
+
+        true
       end
 
       can_view do
@@ -291,14 +295,6 @@ class GroupMembership < ApplicationRecord
 
     controller do
       removing_self = ctx.session.user_id == model.user_id.value
-
-      # Keep historic expenses intact: removing a member with filed expenses is blocked
-      # instead of deleting or rewriting related rows.
-      if Expense.where(group_membership_id: model.id).first?
-        @remove_error_message = HAS_EXPENSES_ERROR
-        ctx.response.status = :unprocessable_entity
-        return
-      end
 
       begin
         GroupMembership.transaction do
