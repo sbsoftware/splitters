@@ -267,6 +267,105 @@ class GroupMembership < ApplicationRecord
     end
   end
 
+  model_action :remove_from_group, group.members_list_view do
+    css_class RemoveAction
+    css_class RemoveButton
+    css_class RemoveError
+
+    HAS_EXPENSES_ERROR  = "Dieses Mitglied kann nicht entfernt werden, weil bereits Ausgaben erfasst wurden."
+    REMOVE_FAILED_ERROR = "Entfernen fehlgeschlagen. Bitte erneut versuchen."
+
+    @remove_error_message : String? = nil
+
+    policy do
+      can_submit do
+        return false unless user_id = ctx.session.user_id
+
+        model.group.group_memberships.any? { |membership| membership.user_id == user_id }
+      end
+
+      can_view do
+        can_submit?
+      end
+    end
+
+    controller do
+      removing_self = ctx.session.user_id == model.user_id.value
+
+      # Keep historic expenses intact: removing a member with filed expenses is blocked
+      # instead of deleting or rewriting related rows.
+      if Expense.where(group_membership_id: model.id).first?
+        @remove_error_message = HAS_EXPENSES_ERROR
+        ctx.response.status = :unprocessable_entity
+        return
+      end
+
+      begin
+        GroupMembership.transaction do
+          WeightTemplateMembership.where(group_membership_id: model.id).each(&.destroy)
+          model.destroy
+        end
+      rescue Exception
+        @remove_error_message = REMOVE_FAILED_ERROR
+        ctx.response.status = :unprocessable_entity
+        return
+      end
+
+      if removing_self
+        redirect HomePage.uri_path
+      end
+    end
+
+    def remove_error_message : String?
+      @remove_error_message
+    end
+
+    view do
+      template do
+        div RemoveAction do
+          custom_action_trigger(confirm_prompt: "Mitglied wirklich entfernen?").to_html do
+            button RemoveButton, type: :button do
+              "Entfernen"
+            end
+          end
+
+          if error_message = action.remove_error_message
+            div RemoveError do
+              error_message
+            end
+          end
+        end
+      end
+
+      style do
+        rule RemoveAction do
+          display :flex
+          flex_direction :column
+          align_items :flex_end
+          gap 4.px
+        end
+
+        rule RemoveButton do
+          border 1.px, :solid, "#801515"
+          border_radius 999.px
+          background_color "#fff5f5"
+          color "#801515"
+          padding 2.px, 10.px
+          font_size 0.75.rem
+          cursor :pointer
+          white_space :nowrap
+        end
+
+        rule RemoveError do
+          font_size 0.75.rem
+          color "#a40000"
+          text_align :right
+          max_width 220.px
+        end
+      end
+    end
+  end
+
   model_template :set_weight_form do
     set_weight_action_template(ctx).to_html
   end
