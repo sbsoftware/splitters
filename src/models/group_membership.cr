@@ -282,8 +282,11 @@ class GroupMembership < ApplicationRecord
 
         return false unless model.group.group_memberships.any? { |membership| membership.user_id == user_id }
 
-        # Keep historic expenses intact by disallowing removal once expenses exist.
+        # Keep historic accounting intact by disallowing removal once
+        # expenses or reimbursements reference this membership.
         return false if Expense.where(group_membership_id: model.id).first?
+        return false if Reimbursement.where(payer_membership_id: model.id).first?
+        return false if Reimbursement.where(recipient_membership_id: model.id).first?
 
         true
       end
