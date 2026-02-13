@@ -294,8 +294,6 @@ class GroupMembership < ApplicationRecord
     end
 
     controller do
-      removing_self = ctx.session.user_id == model.user_id.value
-
       begin
         GroupMembership.transaction do
           WeightTemplateMembership.where(group_membership_id: model.id).each(&.destroy)
@@ -307,7 +305,7 @@ class GroupMembership < ApplicationRecord
         return
       end
 
-      if removing_self
+      if ctx.session.user_id == model.user_id.value
         redirect HomePage.uri_path
       end
     end
