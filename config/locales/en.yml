@@ -8,6 +8,7 @@ en:
       form:
         amount: "Amount in €:"
         recipient_membership_id: "To:"
+        recipient_membership_id_prompt: "Please choose"
 de:
   group:
     create_expense_action:
@@ -18,3 +19,4 @@ de:
       form:
         amount: "Betrag in €:"
         recipient_membership_id: "An:"
+        recipient_membership_id_prompt: "Bitte auswählen"

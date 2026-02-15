@@ -458,8 +458,8 @@ class Group < ApplicationRecord
     AMOUNT_FIELD      = "amount"
 
     form do
-      field description : String
-      field amount : Float64
+      field description : String, allow_blank: false, attrs: {required: true}
+      field amount : Float64, attrs: {required: true, step: ".01"}
     end
 
     def current_group_membership : GroupMembership?
@@ -477,7 +477,7 @@ class Group < ApplicationRecord
       end
 
       form = begin
-        Form.from_www_form(ctx, body.gets_to_end)
+        self.form
       rescue Exception
         ctx.response.status = :unprocessable_entity
         return
@@ -518,21 +518,12 @@ class Group < ApplicationRecord
 
     view do
       css_class CreateExpenseBox
-      css_class Field
       css_class ButtonRow
 
       template do
         div CreateExpenseBox do
           h3 { "Neue Ausgabe" }
-          form action: action.uri_path, method: "POST" do
-            div Field do
-              label { "Beschreibung:" }
-              input type: :text, name: DESCRIPTION_FIELD, required: true
-            end
-            div Field do
-              label { "Betrag in €:" }
-              input type: :number, name: AMOUNT_FIELD, required: true, step: ".01"
-            end
+          action_form.to_html do
             div ButtonRow do
               button do
                 "Speichern"
@@ -550,12 +541,13 @@ class Group < ApplicationRecord
           padding 16.px
           border 1.px, :solid, :silver
           box_sizing :border_box
-        end
 
-        rule Field do
-          display :flex
-          justify_content :space_between
-          margin_bottom 16.px
+          rule Crumble::Field do
+            display :flex
+            justify_content :space_between
+            margin_bottom 16.px
+            gap 12.px
+          end
         end
 
         rule ButtonRow do
@@ -570,9 +562,34 @@ class Group < ApplicationRecord
     AMOUNT_FIELD    = "amount"
     RECIPIENT_FIELD = "recipient_membership_id"
 
+    include Crumble::Crababel
+
     form do
-      field amount : Float64
-      field recipient_membership_id : Int64
+      @recipient_options : Array(Tuple(String, String)) = [] of Tuple(String, String)
+
+      field amount : Float64, attrs: {required: true, step: ".01"}
+      field recipient_membership_id : Int64, type: :select, options: recipient_options, attrs: {required: true}
+
+      def recipient_options : Array(Tuple(String, String))
+        @recipient_options
+      end
+
+      def recipient_options=(options : Array(Tuple(String, String)))
+        @recipient_options = options
+      end
+    end
+
+    @submitted_form : Form? = nil
+
+    def form
+      options = build_recipient_options
+
+      if submitted_form = @submitted_form
+        submitted_form.recipient_options = options
+        submitted_form
+      else
+        Form.new(ctx, recipient_options: options)
+      end
     end
 
     def current_group_membership : GroupMembership?
@@ -583,18 +600,37 @@ class Group < ApplicationRecord
       end
     end
 
+    def build_recipient_options : Array(Tuple(String, String))
+      memberships = model.group_memberships.to_a
+      current_user_id = ctx.session.user_id
+      recipient_memberships = if current_user_id
+                                memberships.reject { |membership| membership.user_id == current_user_id }
+                              else
+                                memberships
+                              end
+
+      options = [{"", t.form.recipient_membership_id_prompt}] of Tuple(String, String)
+      recipient_memberships.each do |membership|
+        options << {membership.id.value.to_s, membership.display_name}
+      end
+
+      options
+    end
+
     controller do
       unless body = ctx.request.body
         ctx.response.status = :bad_request
         return
       end
 
-      form = begin
+      @submitted_form = begin
         Form.from_www_form(ctx, body.gets_to_end)
       rescue Exception
         ctx.response.status = :unprocessable_entity
         return
       end
+      form = @submitted_form.not_nil!
+      form.recipient_options = build_recipient_options
 
       unless form.valid?
         ctx.response.status = :unprocessable_entity
@@ -634,7 +670,6 @@ class Group < ApplicationRecord
       css_class ReimbursementToggleLabel
       css_class ReimbursementCaret
       css_class ReimbursementFormBox
-      css_class ReimbursementField
       css_class ReimbursementButtonRow
 
       stimulus_controller ReimbursementToggleController do
@@ -646,14 +681,6 @@ class Group < ApplicationRecord
       end
 
       template do
-        memberships = model.group_memberships.to_a
-        current_membership = memberships.find { |membership| membership.user_id == ctx.session.user_id }
-        other_memberships = if current_membership
-                              memberships.reject { |membership| membership.id == current_membership.id }
-                            else
-                              memberships
-                            end
-
         div ReimbursementToggle, ReimbursementToggleController do
           button ReimbursementToggleButton, ReimbursementToggleController.toggle_action("click"), type: :button do
             span ReimbursementToggleLabel do
@@ -662,27 +689,12 @@ class Group < ApplicationRecord
             span ReimbursementCaret
           end
 
-          form ReimbursementToggleController.form_target, ReimbursementFormBox, action: action.uri_path, method: "POST", hidden: true do
-            div ReimbursementField do
-              label { "Betrag in €:" }
-              input type: :number, name: AMOUNT_FIELD, required: true, step: ".01"
-            end
-            div ReimbursementField do
-              label { "An:" }
-              select_tag name: RECIPIENT_FIELD, required: true do
-                option(value: "") do
-                  "Bitte auswählen"
+          div ReimbursementToggleController.form_target, ReimbursementFormBox, hidden: true do
+            action_form.to_html do
+              div ReimbursementButtonRow do
+                button do
+                  "Speichern"
                 end
-                other_memberships.each do |membership|
-                  option(value: membership.id) do
-                    membership.display_name
-                  end
-                end
-              end
-            end
-            div ReimbursementButtonRow do
-              button do
-                "Speichern"
               end
             end
           end
@@ -720,12 +732,13 @@ class Group < ApplicationRecord
           padding 16.px
           border 1.px, :solid, :silver
           box_sizing :border_box
-        end
 
-        rule ReimbursementField do
-          display :flex
-          justify_content :space_between
-          margin_bottom 16.px
+          rule Crumble::Field do
+            display :flex
+            justify_content :space_between
+            margin_bottom 16.px
+            gap 12.px
+          end
         end
 
         rule ReimbursementButtonRow do
