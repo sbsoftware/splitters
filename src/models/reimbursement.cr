@@ -55,7 +55,7 @@ class Reimbursement < ApplicationRecord
         div DeleteCardAction do
           custom_action_trigger(confirm_prompt: "Rückerstattung wirklich löschen?").to_html do
             button DeleteCardButton, type: :button, title: "Rückerstattung löschen" do
-              "x"
+              Crumble::Material::Icon.new("delete")
             end
           end
           if error_message = action.delete_error_message
@@ -71,8 +71,8 @@ class Reimbursement < ApplicationRecord
   style do
     rule DeleteCardAction do
       position :absolute
-      top 8.px
-      right 8.px
+      top 10.px
+      right 10.px
       z_index 2
       display :flex
       flex_direction :column
@@ -85,22 +85,30 @@ class Reimbursement < ApplicationRecord
     end
 
     rule DeleteCardButton do
-      width 24.px
-      height 24.px
-      border 1.px, :solid, :black
+      width 28.px
+      height 28.px
+      border 1.px, :solid, "#9ab4a0"
       border_radius 999.px
-      background_color :white
+      background_color "#f7fbf7"
+      color "#31583a"
       cursor :pointer
-      line_height 1
       padding 0.px
-      font_size 0.9.rem
+      display :flex
+      align_items :center
+      justify_content :center
     end
 
     rule DeleteError do
-      margin_top 6.px
-      font_size 0.75.rem
-      color "#a40000"
-      text_align :right
+      margin_top 8.px
+      max_width 220.px
+      padding 6.px, 8.px
+      border 1.px, :solid, "#d8a2a2"
+      border_radius 8.px
+      background_color "#fff2f2"
+      font_size 0.78.rem
+      color "#8f1f1f"
+      text_align :left
+      property("overflow-wrap", "anywhere")
     end
   end
 end

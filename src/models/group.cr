@@ -751,15 +751,27 @@ class Group < ApplicationRecord
 
   css_class ExpensesContainer
   css_class ExpensesSummaryBox
+  css_class ExpensesSummaryList
+  css_class ExpensesSummaryState
+  css_class ExpensesSummaryStateNoExpenses
+  css_class ExpensesSummaryStateSettled
   css_class ExpensesSummaryLine
   css_class ExpensesSummaryStatement
+  css_class ExpensesSummaryParties
+  css_class ExpensesSummaryArrow
+  css_class ExpensesSummaryAmount
   css_class ExpensesSummaryPayForm
   css_class ExpensesSummaryPayButton
   css_class ExpensesSummaryTotal
   css_class ReimbursementCard
+  css_class ReimbursementCardHeader
+  css_class ReimbursementCardLabel
+  css_class ReimbursementCardAmount
+  css_class ReimbursementCardFlow
+  css_class ReimbursementCardMeta
 
   style do
-    EXPENSE_CARD_MIN_WIDTH  = 376.px
+    EXPENSE_CARD_MIN_WIDTH  = 360.px
     EXPENSE_CARD_MIN_HEIGHT = 128.px
 
     rule ExpensesSummaryBox do
@@ -767,13 +779,41 @@ class Group < ApplicationRecord
       margin 0.px, :auto
       margin_bottom 16.px
       padding 16.px
-      border 1.px, :solid, :silver
+      border 1.px, :solid, "#d8dde8"
+      border_radius 12.px
+      background_color "#f8fafd"
       box_sizing :border_box
+    end
 
-      rule h3 do
-        margin_top 0.px
-        margin_bottom 8.px
-      end
+    rule ExpensesSummaryTotal do
+      margin 0.px
+      margin_bottom 12.px
+      font_weight :bold
+      font_size 1.05.rem
+    end
+
+    rule ExpensesSummaryState do
+      margin 0.px
+      padding 8.px, 10.px
+      border_radius 8.px
+      background_color "#eef1f6"
+      color "#44506a"
+    end
+
+    rule ExpensesSummaryStateNoExpenses do
+      background_color "#f0f2f7"
+      color "#4f5972"
+    end
+
+    rule ExpensesSummaryStateSettled do
+      background_color "#e7f5e9"
+      color "#2f5a33"
+    end
+
+    rule ExpensesSummaryList do
+      display :flex
+      flex_direction :column
+      gap 8.px
     end
 
     rule ExpensesSummaryLine do
@@ -783,29 +823,53 @@ class Group < ApplicationRecord
       gap 12.px
       margin 0.px
       flex_wrap :wrap
+      padding 10.px, 12.px
+      border 1.px, :solid, "#dce2ee"
+      border_radius 10.px
+      background_color :white
     end
 
     rule ExpensesSummaryStatement do
       flex_grow 1
+      display :flex
+      align_items :center
+      justify_content :space_between
+      gap 8.px
+      flex_wrap :wrap
+    end
+
+    rule ExpensesSummaryParties do
+      display :flex
+      align_items :center
+      gap 6.px
+      flex_wrap :wrap
+      font_weight :bold
+    end
+
+    rule ExpensesSummaryArrow do
+      color "#6b7590"
+    end
+
+    rule ExpensesSummaryAmount do
+      font_weight :bold
+      property("white-space", "nowrap")
     end
 
     rule ExpensesSummaryPayForm do
       flex_shrink 0
+      margin 0.px
     end
 
     rule ExpensesSummaryPayButton do
-      padding 6.px, 12.px
-      border 1.px, :solid, :black
-      border_radius 6.px
-      background_color :white
+      padding 7.px, 14.px
+      border 1.px, :solid, "#1c5fd4"
+      border_radius 999.px
+      background_color "#1c5fd4"
+      color :white
       cursor :pointer
       font_size 0.9.rem
-    end
-
-    rule ExpensesSummaryTotal do
-      margin 0.px
-      margin_bottom 12.px
       font_weight :bold
+      property("white-space", "nowrap")
     end
 
     rule ExpensesContainer do
@@ -821,8 +885,10 @@ class Group < ApplicationRecord
       box_sizing :border_box
 
       rule Crumble::Material::Card::Card do
-        width EXPENSE_CARD_MIN_WIDTH
+        width 100.percent
+        max_width EXPENSE_CARD_MIN_WIDTH
         min_height EXPENSE_CARD_MIN_HEIGHT
+        box_sizing :border_box
       end
     end
 
@@ -830,8 +896,44 @@ class Group < ApplicationRecord
       position :relative
 
       rule Crumble::Material::Card::Card do
-        background_color "#d8f5d0"
+        border 1.px, :solid, "#c7ddca"
+        background_color "#eaf6ec"
+        padding_right 44.px
       end
+    end
+
+    rule ReimbursementCardHeader do
+      display :flex
+      justify_content :space_between
+      align_items :flex_start
+      gap 10.px
+    end
+
+    rule ReimbursementCardLabel do
+      font_weight :bold
+      color "#2f5a33"
+      property("text-transform", "uppercase")
+      font_size 0.78.rem
+      property("letter-spacing", "0.04em")
+    end
+
+    rule ReimbursementCardAmount do
+      font_weight :bold
+      font_size 1.05.rem
+      color "#1f3d23"
+      property("white-space", "nowrap")
+    end
+
+    rule ReimbursementCardFlow do
+      display :flex
+      align_items :center
+      gap 6.px
+      flex_wrap :wrap
+      margin_top 4.px
+    end
+
+    rule ReimbursementCardMeta do
+      color "#3c5d43"
     end
 
     rule TopAppBarHeadlineWrapper do
@@ -876,36 +978,56 @@ class Group < ApplicationRecord
       end
 
       if entries.empty?
-        p { "Noch keine Ausgaben." }
+        p ExpensesSummaryState, ExpensesSummaryStateNoExpenses do
+          "Noch keine Ausgaben."
+        end
       else
         memberships = group_memberships.to_a
         membership_by_id = memberships.to_h { |membership| {membership.id.value, membership} }
         debt_entries = expense_debts(memberships)
         if debt_entries.empty?
-          p { "Alle sind ausgeglichen." }
+          p ExpensesSummaryState, ExpensesSummaryStateSettled do
+            "Alle sind ausgeglichen."
+          end
         else
           current_membership_id = memberships.find { |membership| membership.user_id == ctx.session.user_id }.try(&.id.value)
-          debt_entries.each do |debt|
-            debtor = membership_by_id[debt.debtor_id]
-            creditor = membership_by_id[debt.creditor_id]
-            div ExpensesSummaryLine do
-              span ExpensesSummaryStatement do
-                "#{debtor.display_name} schuldet #{creditor.display_name} #{format_euros(debt.amount_cents)}€"
-              end
-              if current_membership_id && debt.debtor_id == current_membership_id
-                form ExpensesSummaryPayForm, action: Group::CreateReimbursementAction.uri_path(id), method: "POST" do
-                  input(
-                    type: :hidden,
-                    name: Group::CreateReimbursementAction::AMOUNT_FIELD,
-                    value: amount_input_value(debt.amount_cents)
-                  )
-                  input(
-                    type: :hidden,
-                    name: Group::CreateReimbursementAction::RECIPIENT_FIELD,
-                    value: debt.creditor_id
-                  )
-                  button ExpensesSummaryPayButton, type: :submit do
-                    "Ausgleichen"
+          div ExpensesSummaryList do
+            debt_entries.each do |debt|
+              debtor = membership_by_id[debt.debtor_id]
+              creditor = membership_by_id[debt.creditor_id]
+              div ExpensesSummaryLine do
+                span ExpensesSummaryStatement do
+                  span ExpensesSummaryParties do
+                    span do
+                      debtor.display_name
+                    end
+                    span ExpensesSummaryArrow do
+                      "→"
+                    end
+                    span do
+                      creditor.display_name
+                    end
+                  end
+                  span ExpensesSummaryAmount do
+                    "#{format_euros(debt.amount_cents)} €"
+                  end
+                end
+                # Show the call-to-action only to the user that currently owes this debt.
+                if current_membership_id && debt.debtor_id == current_membership_id
+                  form ExpensesSummaryPayForm, action: Group::CreateReimbursementAction.uri_path(id), method: "POST" do
+                    input(
+                      type: :hidden,
+                      name: Group::CreateReimbursementAction::AMOUNT_FIELD,
+                      value: amount_input_value(debt.amount_cents)
+                    )
+                    input(
+                      type: :hidden,
+                      name: Group::CreateReimbursementAction::RECIPIENT_FIELD,
+                      value: debt.creditor_id
+                    )
+                    button ExpensesSummaryPayButton, type: :submit do
+                      "Ausgleichen"
+                    end
                   end
                 end
               end
@@ -953,7 +1075,30 @@ class Group < ApplicationRecord
               payer = reimbursement.payer_membership.display_name
               recipient = reimbursement.recipient_membership.display_name
               amount = format_euros(reimbursement.amount.value)
-              "#{payer} hat #{amount}€ an #{recipient} gezahlt"
+              div ReimbursementCardHeader do
+                span ReimbursementCardLabel do
+                  "Rückerstattung"
+                end
+                span ReimbursementCardAmount do
+                  "#{amount} €"
+                end
+              end
+              Crumble::Material::Card::SecondaryText.new.to_html do
+                div ReimbursementCardFlow do
+                  strong do
+                    payer
+                  end
+                  span ReimbursementCardMeta do
+                    "hat an"
+                  end
+                  strong do
+                    recipient
+                  end
+                  span ReimbursementCardMeta do
+                    "gezahlt"
+                  end
+                end
+              end
             end
           end
         end
