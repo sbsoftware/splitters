@@ -108,7 +108,7 @@ class Reimbursement < ApplicationRecord
       font_size 0.78.rem
       color "#8f1f1f"
       text_align :left
-      property("overflow-wrap", "anywhere")
+      overflow_wrap :anywhere
     end
   end
 end

@@ -852,7 +852,7 @@ class Group < ApplicationRecord
 
     rule ExpensesSummaryAmount do
       font_weight :bold
-      property("white-space", "nowrap")
+      white_space :nowrap
     end
 
     rule ExpensesSummaryPayForm do
@@ -869,7 +869,7 @@ class Group < ApplicationRecord
       cursor :pointer
       font_size 0.9.rem
       font_weight :bold
-      property("white-space", "nowrap")
+      white_space :nowrap
     end
 
     rule ExpensesContainer do
@@ -914,14 +914,14 @@ class Group < ApplicationRecord
       color "#2f5a33"
       property("text-transform", "uppercase")
       font_size 0.78.rem
-      property("letter-spacing", "0.04em")
+      letter_spacing 0.04.em
     end
 
     rule ReimbursementCardAmount do
       font_weight :bold
       font_size 1.05.rem
       color "#1f3d23"
-      property("white-space", "nowrap")
+      white_space :nowrap
     end
 
     rule ReimbursementCardFlow do
