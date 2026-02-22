@@ -462,6 +462,12 @@ class Group < ApplicationRecord
       field amount : Float64, attrs: {required: true, step: ".01"}
     end
 
+    @submitted_form : Form? = nil
+
+    def form
+      @submitted_form || Form.new(ctx)
+    end
+
     def current_group_membership : GroupMembership?
       return nil unless user_id = ctx.session.user_id
 
@@ -476,12 +482,13 @@ class Group < ApplicationRecord
         return
       end
 
-      form = begin
-        self.form
+      @submitted_form = begin
+        Form.from_www_form(ctx, body.gets_to_end)
       rescue Exception
         ctx.response.status = :unprocessable_entity
         return
       end
+      form = @submitted_form.not_nil!
 
       unless form.valid?
         ctx.response.status = :unprocessable_entity
