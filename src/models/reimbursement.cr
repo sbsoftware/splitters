@@ -97,6 +97,10 @@ class Reimbursement < ApplicationRecord
       display :flex
       align_items :center
       justify_content :center
+
+      rule Crumble::Material::Icon::IconClass do
+        font_size 20.px
+      end
     end
 
     rule DeleteError do
