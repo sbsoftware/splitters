@@ -499,18 +499,14 @@ class Group < ApplicationRecord
 
       amount_cents = (amount * 100).round.to_i
 
-      weight_template = model.default_weight_template || model.weight_templates.order_by_id!.first?
-      unless weight_template
-        ctx.response.status = :unprocessable_entity
-        return
-      end
+      weight_template_id = model.default_weight_template.try(&.id) || model.weight_templates.order_by_id!.first?.try(&.id)
 
       self.class.child_class.create(
         **parent_params,
         description: description,
         amount: amount_cents,
         group_membership_id: group_membership.id,
-        weight_template_id: weight_template.id
+        weight_template_id: weight_template_id
       )
 
       ctx.response.status = :created

@@ -132,5 +132,31 @@ module ExpenseSpec
       ctx.response.close
       response_io.to_s.includes?("<turbo-stream").should be_false
     end
+
+    it "creates an expense from submitted form values" do
+      user = User.create
+      group = Group.create(name: "Spec Group")
+      membership = GroupMembership.create(group_id: group.id, user_id: user.id, name: "Anna")
+
+      body = URI::Params.encode({
+        Group::CreateExpenseAction::DESCRIPTION_FIELD => "Snacks",
+        Group::CreateExpenseAction::AMOUNT_FIELD      => "12.34",
+      })
+      ctx = Crumble::Server::TestRequestContext.new(
+        method: "POST",
+        resource: Group::CreateExpenseAction.uri_path(group.id.value),
+        body: body
+      )
+      ctx.session.update!(user_id: user.id.value)
+
+      Group::CreateExpenseAction.handle(ctx).should be_true
+      ctx.response.status_code.should eq(201)
+
+      expense = Expense.where(group_id: group.id).first.not_nil!
+      expense.group_membership_id.value.should eq(membership.id.value)
+      expense.description.value.should eq("Snacks")
+      expense.amount.value.should eq(1234)
+      expense.weight_template_id.should be_nil
+    end
   end
 end
