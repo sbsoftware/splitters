@@ -74,14 +74,15 @@ class Expense < ApplicationRecord
     end
 
     rule ExpenseDeleteCardButton do
-      width 30.px
-      height 30.px
+      width 28.px
+      height 28.px
       border 1.px, :solid, "#9ab4a0"
       border_radius 999.px
       background_color "#f7fbf7"
       color "#31583a"
       cursor :pointer
       padding 0.px
+      font_size 18.px
       display :flex
       align_items :center
       justify_content :center
