@@ -769,6 +769,7 @@ class Group < ApplicationRecord
   css_class ReimbursementCardAmount
   css_class ReimbursementCardFlow
   css_class ReimbursementCardMeta
+  css_class ExpenseCardDescription
 
   style do
     EXPENSE_CARD_MIN_WIDTH  = 360.px
@@ -884,9 +885,13 @@ class Group < ApplicationRecord
       width 100.percent
       box_sizing :border_box
 
-      rule Crumble::Material::Card::Card do
+      rule Expense::ExpenseCard, ReimbursementCard do
         width 100.percent
         max_width EXPENSE_CARD_MIN_WIDTH
+      end
+
+      rule Crumble::Material::Card::Card do
+        width 100.percent
         min_height EXPENSE_CARD_MIN_HEIGHT
         box_sizing :border_box
       end
@@ -898,7 +903,7 @@ class Group < ApplicationRecord
       rule Crumble::Material::Card::Card do
         border 1.px, :solid, "#c7ddca"
         background_color "#eaf6ec"
-        padding_right 44.px
+        padding_right 52.px
       end
     end
 
@@ -919,7 +924,7 @@ class Group < ApplicationRecord
 
     rule ReimbursementCardAmount do
       font_weight :bold
-      font_size 1.05.rem
+      font_size 0.95.rem
       color "#1f3d23"
       white_space :nowrap
     end
@@ -934,6 +939,13 @@ class Group < ApplicationRecord
 
     rule ReimbursementCardMeta do
       color "#3c5d43"
+    end
+
+    rule ExpenseCardDescription do
+      font_weight :bold
+      color "#1f3d23"
+      margin_top 4.px
+      margin_bottom 2.px
     end
 
     rule TopAppBarHeadlineWrapper do
@@ -1046,12 +1058,19 @@ class Group < ApplicationRecord
           div Expense::ExpenseCard do
             expense.delete_from_card_action_template(ctx)
             Crumble::Material::Card.new.to_html do
-              Crumble::Material::Card::Title.new(expense.description)
-              Crumble::Material::Card::SecondaryText.new.to_html do
-                span do
-                  (expense.amount.to_f / 100).format(",", ".", decimal_places: 2)
-                  " € "
+              amount = format_euros(expense.amount.value)
+              div ReimbursementCardHeader do
+                span ReimbursementCardLabel do
+                  "Ausgabe"
                 end
+                span ReimbursementCardAmount do
+                  "#{amount} €"
+                end
+              end
+              div ExpenseCardDescription do
+                expense.description
+              end
+              Crumble::Material::Card::SecondaryText.new.to_html do
                 span do
                   "bezahlt von "
                 end

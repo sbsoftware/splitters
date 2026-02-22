@@ -71,8 +71,8 @@ class Reimbursement < ApplicationRecord
   style do
     rule DeleteCardAction do
       position :absolute
-      top 10.px
-      right 10.px
+      top 12.px
+      right 12.px
       z_index 2
       display :flex
       flex_direction :column
@@ -85,8 +85,8 @@ class Reimbursement < ApplicationRecord
     end
 
     rule DeleteCardButton do
-      width 28.px
-      height 28.px
+      width 30.px
+      height 30.px
       border 1.px, :solid, "#9ab4a0"
       border_radius 999.px
       background_color "#f7fbf7"
