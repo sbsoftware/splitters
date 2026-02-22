@@ -21,6 +21,11 @@ class Expense < ApplicationRecord
   style do
     rule ExpenseCard do
       position :relative
+
+      rule Crumble::Material::Card::Card do
+        # Keep content clear of the top-right delete control.
+        padding_right 52.px
+      end
     end
 
     rule ExpenseWeightTemplateLine do
@@ -55,8 +60,8 @@ class Expense < ApplicationRecord
 
     rule ExpenseDeleteCardAction do
       position :absolute
-      top 8.px
-      right 8.px
+      top 12.px
+      right 12.px
       z_index 2
       display :flex
       flex_direction :column
@@ -69,22 +74,35 @@ class Expense < ApplicationRecord
     end
 
     rule ExpenseDeleteCardButton do
-      width 24.px
-      height 24.px
-      border 1.px, :solid, :black
+      width 28.px
+      height 28.px
+      border 1.px, :solid, "#9ab4a0"
       border_radius 999.px
-      background_color :white
+      background_color "#f7fbf7"
+      color "#31583a"
       cursor :pointer
-      line_height 1
       padding 0.px
-      font_size 0.9.rem
+      font_size 18.px
+      display :flex
+      align_items :center
+      justify_content :center
+
+      rule Crumble::Material::Icon::IconClass do
+        font_size 20.px
+      end
     end
 
     rule ExpenseDeleteError do
-      margin_top 6.px
-      font_size 0.75.rem
-      color "#a40000"
-      text_align :right
+      margin_top 8.px
+      max_width 220.px
+      padding 6.px, 8.px
+      border 1.px, :solid, "#d8a2a2"
+      border_radius 8.px
+      background_color "#fff2f2"
+      font_size 0.78.rem
+      color "#8f1f1f"
+      text_align :left
+      overflow_wrap :anywhere
     end
   end
 
@@ -133,7 +151,7 @@ class Expense < ApplicationRecord
         div ExpenseDeleteCardAction do
           custom_action_trigger(confirm_prompt: "Ausgabe wirklich löschen?").to_html do
             button ExpenseDeleteCardButton, type: :button, title: "Ausgabe löschen" do
-              "x"
+              Crumble::Material::Icon.new("delete")
             end
           end
           if error_message = action.delete_error_message

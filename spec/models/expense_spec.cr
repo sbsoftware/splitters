@@ -31,6 +31,44 @@ module ExpenseSpec
       Expense::DeleteFromCardAction.new(other_ctx, expense).action_template.to_html.should be_empty
     end
 
+    it "renders expense cards with the shared heading style and delete icon" do
+      payer_user = User.create
+      other_user = User.create
+      group = Group.create(name: "Spec Group")
+      payer_membership = GroupMembership.create(group_id: group.id, user_id: payer_user.id, name: "Anna")
+      GroupMembership.create(group_id: group.id, user_id: other_user.id, name: "Ben")
+
+      expense = Expense.create(
+        group_id: group.id,
+        group_membership_id: payer_membership.id,
+        weight_template_id: nil,
+        description: "Snacks",
+        amount: 1200
+      )
+
+      response_io = IO::Memory.new
+      ctx = Crumble::Server::TestRequestContext.new(
+        resource: GroupPage.uri_path(group_id: group.id),
+        method: "GET",
+        response_io: response_io
+      )
+      ctx.session.update!(user_id: payer_user.id.value)
+
+      GroupPage.handle(ctx).should be_true
+      ctx.response.status_code.should eq(200)
+      ctx.response.close
+      response_io.rewind
+      body = response_io.to_s
+
+      body.includes?(">Ausgabe<").should be_true
+      body.includes?("12,00 €").should be_true
+      body.includes?("Snacks").should be_true
+      body.includes?("bezahlt von").should be_true
+      body.includes?("Anna").should be_true
+      body.includes?(Expense::DeleteFromCardAction.uri_path(expense.id.value)).should be_true
+      body.includes?(">delete<").should be_true
+    end
+
     it "deletes the expense for an authorized user and refreshes summary and card views" do
       payer_user = User.create
       other_user = User.create

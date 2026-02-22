@@ -29,6 +29,41 @@ module ReimbursementSpec
       Reimbursement::DeleteFromCardAction.new(recipient_ctx, reimbursement).action_template.to_html.should be_empty
     end
 
+    it "renders reimbursement cards with a structured summary layout" do
+      payer_user = User.create
+      recipient_user = User.create
+      group = Group.create(name: "Spec Group")
+      payer_membership = GroupMembership.create(group_id: group.id, user_id: payer_user.id, name: "Anna")
+      recipient_membership = GroupMembership.create(group_id: group.id, user_id: recipient_user.id, name: "Ben")
+      reimbursement = Reimbursement.create(
+        group_id: group.id,
+        payer_membership_id: payer_membership.id,
+        recipient_membership_id: recipient_membership.id,
+        amount: 1200
+      )
+
+      response_io = IO::Memory.new
+      ctx = Crumble::Server::TestRequestContext.new(
+        resource: GroupPage.uri_path(group_id: group.id),
+        method: "GET",
+        response_io: response_io
+      )
+      ctx.session.update!(user_id: payer_user.id.value)
+      GroupPage.handle(ctx).should be_true
+      ctx.response.status_code.should eq(200)
+      ctx.response.close
+
+      response_io.rewind
+      html = response_io.to_s
+      html.includes?("Rückerstattung").should be_true
+      html.includes?("12,00 €").should be_true
+      html.includes?("Anna").should be_true
+      html.includes?("Ben").should be_true
+      html.includes?("hat an").should be_true
+      html.includes?("gezahlt").should be_true
+      html.includes?(Reimbursement::DeleteFromCardAction.uri_path(reimbursement.id.value)).should be_true
+    end
+
     it "deletes the reimbursement for an authorized user and refreshes summary and card views" do
       payer_user = User.create
       recipient_user = User.create
