@@ -13,6 +13,7 @@ module Groups
     css_class NameButton
     css_class YouBadge
     css_class Weight
+    css_class MemberControls
     css_class HideNameForm
 
     stimulus_controller NameEditorController do
@@ -49,8 +50,11 @@ module Groups
                       "Du"
                     end
                   end
-                  span Weight do
-                    group_membership.set_weight_form.renderer(ctx)
+                  div MemberControls do
+                    span Weight do
+                      group_membership.set_weight_form.renderer(ctx)
+                    end
+                    group_membership.remove_from_group_action_template(ctx)
                   end
                 end
                 action_template.to_html
@@ -60,8 +64,11 @@ module Groups
                   span Name do
                     group_membership.name_display.renderer(ctx)
                   end
-                  span Weight do
-                    group_membership.set_weight_form.renderer(ctx)
+                  div MemberControls do
+                    span Weight do
+                      group_membership.set_weight_form.renderer(ctx)
+                    end
+                    group_membership.remove_from_group_action_template(ctx)
                   end
                 end
               end
@@ -121,6 +128,12 @@ module Groups
           width 55.px
           vertical_align :middle
         end
+      end
+
+      rule MemberControls do
+        display :flex
+        gap 8.px
+        align_items :center
       end
 
       rule HideNameForm do
