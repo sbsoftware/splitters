@@ -15,6 +15,13 @@ class HomeView
 
   ToHtml.instance_template do
     div HomeView do
+      Crumble::Material::TopAppBar.new(
+        leading_icon: Crumble::Material::NavigationDrawer::MenuSwitch,
+        headline: "Splitters",
+        trailing_icons: [] of Nil,
+        type: :center_aligned
+      )
+
       div AddGroupButton do
         form action: GroupResource.uri_path, method: "POST" do
           button IconButton do

@@ -3,11 +3,14 @@ class PrivacyNoticePage < ApplicationPage
     css_class PrivacyNoticeView
 
     ToHtml.instance_template do
-      div PrivacyNoticeView do
-        h1 do
-          "Datenschutz&shy;erkl&auml;rung"
-        end
+      Crumble::Material::TopAppBar.new(
+        leading_icon: Crumble::Material::NavigationDrawer::MenuSwitch,
+        headline: "Datenschutzerklärung",
+        trailing_icons: [] of Nil,
+        type: :center_aligned
+      )
 
+      div PrivacyNoticeView do
         h2 do
           "1. Datenschutz auf einen Blick"
         end

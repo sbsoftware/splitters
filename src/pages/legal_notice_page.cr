@@ -4,11 +4,14 @@ class LegalNoticePage < ApplicationPage
     css_class LicenseLink
 
     ToHtml.instance_template do
-      div LegalNoticeView do
-        h1 do
-          "Impressum"
-        end
+      Crumble::Material::TopAppBar.new(
+        leading_icon: Crumble::Material::NavigationDrawer::MenuSwitch,
+        headline: "Impressum",
+        trailing_icons: [] of Nil,
+        type: :center_aligned
+      )
 
+      div LegalNoticeView do
         p do
           ENV.fetch("LEGAL_NOTICE_NAME")
           br
