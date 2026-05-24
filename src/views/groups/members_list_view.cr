@@ -12,6 +12,7 @@ module Groups
     css_class Name
     css_class NameButton
     css_class YouBadge
+    css_class OfflineBadge
     css_class Weight
     css_class MemberControls
     css_class HideNameForm
@@ -33,6 +34,8 @@ module Groups
 
     ToHtml.instance_template do
       div MembersList do
+        group.create_offline_member_action_template(ctx)
+
         group.group_memberships.each do |group_membership|
           action_template = group_membership.update_name_action_template(ctx)
           action = action_template.action
@@ -63,6 +66,11 @@ module Groups
                   Crumble::Material::Icon.new("account_circle")
                   span Name do
                     group_membership.name_display.renderer(ctx)
+                    if group_membership.offline?
+                      span OfflineBadge do
+                        "Offline"
+                      end
+                    end
                   end
                   div MemberControls do
                     span Weight do
@@ -121,6 +129,20 @@ module Groups
         top -2.px
         background_color "#d7e2ff"
         color "#2a3a74"
+      end
+
+      rule OfflineBadge do
+        display :inline_block
+        margin_left 8.px
+        padding 2.px, 6.px
+        border_radius 999.px
+        font_size 12.px
+        line_height 1.2
+        vertical_align :middle
+        position :relative
+        top -2.px
+        background_color "#ece7d9"
+        color "#4c4330"
       end
 
       rule Weight do

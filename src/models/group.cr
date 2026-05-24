@@ -207,7 +207,7 @@ class Group < ApplicationRecord
 
     before do
       return 403 unless user_id = ctx.session.user_id
-      return 403 unless model.group_memberships.any? { |gm| gm.user_id == user_id }
+      return 403 unless model.group_memberships.any? { |gm| gm.user_id_value == user_id }
 
       true
     end
@@ -264,6 +264,132 @@ class Group < ApplicationRecord
           border 1.px, :solid, :black
           border_radius 6.px
           background_color :white
+        end
+      end
+    end
+  end
+
+  model_action :create_offline_member, members_list_view do
+    NAME_FIELD = "name"
+
+    css_class CreateOfflineMemberForm
+    css_class CreateOfflineMemberInput
+    css_class CreateOfflineMemberButton
+    css_class CreateOfflineMemberError
+
+    form do
+      field name : String
+
+      def valid?
+        super
+
+        errors = @errors.not_nil!
+        if (value = name) && value.strip.empty?
+          errors << NAME_FIELD
+        end
+
+        errors.none?
+      end
+
+      def normalized_name : String?
+        name.try(&.strip)
+      end
+
+      ToHtml.instance_template do
+        input CreateOfflineMemberInput, type: :text, name: NAME_FIELD, value: name.to_s, placeholder: "Name", required: true
+      end
+    end
+
+    @submitted_form : Form? = nil
+
+    def form
+      @submitted_form || Form.new(ctx, name: "")
+    end
+
+    before do
+      return 403 unless user_id = ctx.session.user_id
+      return 403 unless model.group_memberships.any? { |gm| gm.user_id_value == user_id }
+
+      true
+    end
+
+    controller do
+      unless body = ctx.request.body
+        ctx.response.status = :bad_request
+        return
+      end
+
+      @submitted_form = Form.from_www_form(ctx, body.gets_to_end)
+      form = @submitted_form.not_nil!
+
+      unless form.valid?
+        ctx.response.status = :unprocessable_entity
+        return
+      end
+
+      new_name = form.normalized_name
+      return unless new_name
+
+      GroupMembership.create(group_id: model.id, name: new_name)
+      model.expenses_summary_view.refresh!
+    end
+
+    view do
+      template do
+        div CreateOfflineMemberForm do
+          action_form.to_html do
+            if errors = action.form.errors
+              if errors.includes?(NAME_FIELD)
+                div CreateOfflineMemberError do
+                  "Bitte gib einen Namen ein."
+                end
+              end
+            end
+            button CreateOfflineMemberButton, type: :submit, title: "Offline-Mitglied hinzufügen" do
+              Crumble::Material::Icon.new("add")
+            end
+          end
+        end
+      end
+
+      style do
+        rule CreateOfflineMemberForm do
+          margin_bottom 12.px
+
+          rule form do
+            display :flex
+            gap 8.px
+            align_items :center
+          end
+
+          rule Crumble::Field do
+            flex_grow 1
+          end
+        end
+
+        rule CreateOfflineMemberInput do
+          width 100.percent
+          box_sizing :border_box
+          padding 8.px
+          border 1.px, :solid, :silver
+          border_radius 6.px
+        end
+
+        rule CreateOfflineMemberButton do
+          display :flex
+          align_items :center
+          justify_content :center
+          width 40.px
+          height 40.px
+          border 1.px, :solid, :black
+          border_radius 6.px
+          background_color :white
+          cursor :pointer
+        end
+
+        rule CreateOfflineMemberError do
+          color "#a40000"
+          font_size 0.85.rem
         end
       end
     end
@@ -331,7 +457,7 @@ class Group < ApplicationRecord
     before do
       return 403 unless user_id = ctx.session.user_id
 
-      return 403 unless model.group_memberships.any? { |gm| gm.user_id == user_id }
+      return 403 unless model.group_memberships.any? { |gm| gm.user_id_value == user_id }
 
       true
     end
@@ -472,7 +598,7 @@ class Group < ApplicationRecord
       return nil unless user_id = ctx.session.user_id
 
       model.group_memberships.find do |group_membership|
-        group_membership.user_id == user_id
+        group_membership.user_id_value == user_id
       end
     end
 
@@ -603,7 +729,7 @@ class Group < ApplicationRecord
       return nil unless user_id = ctx.session.user_id
 
       model.group_memberships.find do |group_membership|
-        group_membership.user_id == user_id
+        group_membership.user_id_value == user_id
       end
     end
 
@@ -611,7 +737,7 @@ class Group < ApplicationRecord
       memberships = model.group_memberships.to_a
       current_user_id = ctx.session.user_id
       recipient_memberships = if current_user_id
-                                memberships.reject { |membership| membership.user_id == current_user_id }
+                                memberships.reject { |membership| membership.user_id_value == current_user_id }
                               else
                                 memberships
                               end
@@ -1009,7 +1135,7 @@ class Group < ApplicationRecord
             "Alle sind ausgeglichen."
           end
         else
-          current_membership_id = memberships.find { |membership| membership.user_id == ctx.session.user_id }.try(&.id.value)
+          current_membership_id = memberships.find { |membership| membership.user_id_value == ctx.session.user_id }.try(&.id.value)
           div ExpensesSummaryList do
             debt_entries.each do |debt|
               debtor = membership_by_id[debt.debtor_id]
