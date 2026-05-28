@@ -16,6 +16,7 @@ module Groups
     css_class Weight
     css_class MemberControls
     css_class HideNameForm
+    css_class AddOfflineMemberHeader
 
     stimulus_controller NameEditorController do
       action :toggle do
@@ -34,8 +35,6 @@ module Groups
 
     ToHtml.instance_template do
       div MembersList do
-        group.create_offline_member_action_template(ctx)
-
         group.group_memberships.each do |group_membership|
           action_template = group_membership.update_name_action_template(ctx)
           action = action_template.action
@@ -83,6 +82,11 @@ module Groups
             end
           end
         end
+
+        h3 AddOfflineMemberHeader do
+          "Offline-Mitglied hinzufügen"
+        end
+        group.create_offline_member_action_template(ctx)
       end
     end
 
@@ -156,6 +160,11 @@ module Groups
         display :flex
         gap 8.px
         align_items :center
+      end
+
+      rule AddOfflineMemberHeader do
+        margin 16.px, 0.px, 8.px
+        font_size 1.rem
       end
 
       rule HideNameForm do

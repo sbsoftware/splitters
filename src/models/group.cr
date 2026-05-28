@@ -293,18 +293,12 @@ class Group < ApplicationRecord
     end
 
     controller do
-      unless body = ctx.request.body
-        ctx.response.status = :bad_request
-        return
-      end
-
-      unless form.valid?
+      if form.valid?
+        GroupMembership.create(group_id: model.id, name: form.name.not_nil!)
+        model.expenses_summary_view.refresh!
+      else
         ctx.response.status = :unprocessable_entity
-        return
       end
-
-      GroupMembership.create(group_id: model.id, name: form.name.not_nil!)
-      model.expenses_summary_view.refresh!
     end
 
     view do
