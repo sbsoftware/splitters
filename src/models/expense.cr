@@ -125,7 +125,7 @@ class Expense < ApplicationRecord
       can_submit do
         return false unless user_id = ctx.session.user_id
 
-        model.group_membership.user_id.value == user_id
+        model.group_membership.user_id_value == user_id
       end
 
       can_view do
@@ -176,7 +176,7 @@ class Expense < ApplicationRecord
 
     before do
       return 403 unless user_id = ctx.session.user_id
-      return 403 unless model.group.group_memberships.any? { |gm| gm.user_id == user_id }
+      return 403 unless model.group.group_memberships.any? { |gm| gm.user_id_value == user_id }
 
       true
     end
