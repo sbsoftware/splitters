@@ -24,6 +24,7 @@ module SettingsPageSpec
       html.includes?("@").should be_true
       html.includes?("value=\"splitter\"").should be_true
       html.includes?("href=\"#{SettingsPage.uri_path}\"").should be_true
+      html.includes?("action=\"#{User::UpdatePaypalUsernameAction.uri_path(user.id.value)}\"").should be_true
     end
   end
 end
