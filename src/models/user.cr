@@ -33,11 +33,17 @@ class User < ApplicationRecord
     PAYPAL_USERNAME_FIELD = "paypal_username"
 
     form do
-      field paypal_username : String? = ctx.session.user.try(&.paypal_username).try(&.value) do
+      field paypal_username : String? = model.paypal_username.try(&.value) do
         after_submit do |value|
           stripped = value.try(&.strip).try(&.lchop("@")).try(&.strip)
           stripped.nil? || stripped.empty? ? nil : stripped
         end
+      end
+
+      def model : ::User
+        return handler.model if (handler = ctx.handler).is_a?(::User::UpdatePaypalUsernameAction)
+
+        ctx.session.user.not_nil!
       end
 
       ToHtml.instance_template do
@@ -49,7 +55,7 @@ class User < ApplicationRecord
             span ::User::PaypalPrefix do
               "@"
             end
-            input ::User::PaypalInput, id: PAYPAL_USERNAME_FIELD, type: :text, name: PAYPAL_USERNAME_FIELD, value: (paypal_username || ctx.session.user.try(&.paypal_username).try(&.value)).to_s, autocomplete: "username"
+            input ::User::PaypalInput, id: PAYPAL_USERNAME_FIELD, type: :text, name: PAYPAL_USERNAME_FIELD, value: (paypal_username || model.paypal_username.try(&.value)).to_s, autocomplete: "username"
           end
         end
       end
