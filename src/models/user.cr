@@ -40,24 +40,7 @@ class User < ApplicationRecord
         end
       end
 
-      def model : ::User
-        return handler.model if (handler = ctx.handler).is_a?(::User::UpdatePaypalUsernameAction)
-
-        ctx.session.user.not_nil!
-      end
-
       ToHtml.instance_template do
-        div ::User::SettingsField do
-          label ::User::SettingsLabel, for: PAYPAL_USERNAME_FIELD do
-            "PayPal user name"
-          end
-          div ::User::PaypalInputRow do
-            span ::User::PaypalPrefix do
-              "@"
-            end
-            input ::User::PaypalInput, id: PAYPAL_USERNAME_FIELD, type: :text, name: PAYPAL_USERNAME_FIELD, value: (paypal_username || model.paypal_username.try(&.value)).to_s, autocomplete: "username"
-          end
-        end
       end
     end
 
@@ -79,6 +62,17 @@ class User < ApplicationRecord
       template do
         div SettingsForm do
           action_form.to_html do
+            div SettingsField do
+              label SettingsLabel, for: PAYPAL_USERNAME_FIELD do
+                "PayPal user name"
+              end
+              div PaypalInputRow do
+                span PaypalPrefix do
+                  "@"
+                end
+                input PaypalInput, id: PAYPAL_USERNAME_FIELD, type: :text, name: PAYPAL_USERNAME_FIELD, value: model.paypal_username.try(&.value).to_s, autocomplete: "username"
+              end
+            end
             div ButtonRow do
               button SaveButton, type: :submit do
                 "Speichern"
