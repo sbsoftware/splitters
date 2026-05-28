@@ -303,10 +303,7 @@ class Group < ApplicationRecord
         return
       end
 
-      new_name = form.name
-      return unless new_name
-
-      GroupMembership.create(group_id: model.id, name: new_name)
+      GroupMembership.create(group_id: model.id, name: form.name.not_nil!)
       model.expenses_summary_view.refresh!
     end
 
