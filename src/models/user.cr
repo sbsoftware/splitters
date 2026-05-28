@@ -33,11 +33,15 @@ class User < ApplicationRecord
     PAYPAL_USERNAME_FIELD = "paypal_username"
 
     form do
-      field paypal_username : String
+      field paypal_username : String? do
+        before_render do |value|
+          value || ctx.session.user.try(&.paypal_username).try(&.value)
+        end
 
-      def normalized_paypal_username : String?
-        stripped = paypal_username.try(&.strip).try(&.lchop("@")).try(&.strip)
-        stripped.nil? || stripped.empty? ? nil : stripped
+        after_submit do |value|
+          stripped = value.try(&.strip).try(&.lchop("@")).try(&.strip)
+          stripped.nil? || stripped.empty? ? nil : stripped
+        end
       end
 
       ToHtml.instance_template do
@@ -49,14 +53,10 @@ class User < ApplicationRecord
             span ::User::PaypalPrefix do
               "@"
             end
-            input ::User::PaypalInput, id: PAYPAL_USERNAME_FIELD, type: :text, name: PAYPAL_USERNAME_FIELD, value: paypal_username.to_s, autocomplete: "username"
+            input ::User::PaypalInput, id: PAYPAL_USERNAME_FIELD, type: :text, name: PAYPAL_USERNAME_FIELD, value: __apply_before_render_paypal_username(paypal_username).to_s, autocomplete: "username"
           end
         end
       end
-    end
-
-    def form
-      Form.new(ctx, paypal_username: model.paypal_username.try(&.value).to_s)
     end
 
     policy do
@@ -70,22 +70,17 @@ class User < ApplicationRecord
     end
 
     controller do
-      unless body = ctx.request.body
-        ctx.response.status = :bad_request
-        return
-      end
-
-      form = Form.from_www_form(ctx, body.gets_to_end)
-      model.update(paypal_username: form.normalized_paypal_username) if form.valid?
+      model.update(**form.values) if form.valid?
     end
 
     view do
       template do
-        form SettingsForm, action: action.uri_path, method: "POST" do
-          action.form.to_html
-          div ButtonRow do
-            button SaveButton, type: :submit do
-              "Speichern"
+        div SettingsForm do
+          action_form.to_html do
+            div ButtonRow do
+              button SaveButton, type: :submit do
+                "Speichern"
+              end
             end
           end
         end
