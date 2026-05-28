@@ -296,8 +296,6 @@ class Group < ApplicationRecord
       if form.valid?
         GroupMembership.create(group_id: model.id, name: form.name.not_nil!)
         model.expenses_summary_view.refresh!
-      else
-        ctx.response.status = :unprocessable_entity
       end
     end
 
