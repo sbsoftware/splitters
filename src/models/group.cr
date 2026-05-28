@@ -1169,6 +1169,7 @@ class Group < ApplicationRecord
         if entry.is_a?(Expense)
           expense = entry.as(Expense)
           div Expense::ExpenseCard do
+            a Expense::ExpenseDetailsLink, href: ExpenseDetailsPage.uri_path(id, expense.id), title: "Ausgabendetails"
             expense.delete_from_card_action_template(ctx)
             Crumble::Material::Card.new.to_html do
               amount = format_euros(expense.amount.value)
