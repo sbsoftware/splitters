@@ -24,7 +24,7 @@ module GroupSummaryViewSpec
       html.includes?("Summe aller Ausgaben: 0,00 €").should be_true
       html.includes?("Noch keine Ausgaben.").should be_true
       html.includes?("Alle sind ausgeglichen.").should be_false
-      html.includes?("Ausgleichen").should be_false
+      html.includes?("Bezahlt!").should be_false
     end
 
     it "renders the settled state when debts are fully reimbursed" do
@@ -63,7 +63,7 @@ module GroupSummaryViewSpec
 
       html.includes?("Alle sind ausgeglichen.").should be_true
       html.includes?("Noch keine Ausgaben.").should be_false
-      html.includes?("Ausgleichen").should be_false
+      html.includes?("Bezahlt!").should be_false
     end
 
     it "shows the settle action only to the debtor in debt rows" do
@@ -96,7 +96,8 @@ module GroupSummaryViewSpec
       debtor_html.includes?("Anna").should be_true
       debtor_html.includes?("Ben").should be_true
       debtor_html.includes?("6,00 €").should be_true
-      debtor_html.includes?("Ausgleichen").should be_true
+      debtor_html.includes?("Bezahlt!").should be_true
+      debtor_html.includes?("Mit PayPal senden").should be_false
       debtor_html.includes?(Group::CreateReimbursementAction.uri_path(group.id.value)).should be_true
       debtor_html.includes?("value=\"#{creditor_membership.id.value}\"").should be_true
 
@@ -113,7 +114,42 @@ module GroupSummaryViewSpec
       creditor_response_io.rewind
       creditor_html = creditor_response_io.to_s
       creditor_html.includes?("6,00 €").should be_true
-      creditor_html.includes?("Ausgleichen").should be_false
+      creditor_html.includes?("Bezahlt!").should be_false
+    end
+
+    it "shows a paypal link to debtors when the creditor has a paypal user name" do
+      debtor_user = User.create
+      creditor_user = User.create(paypal_username: "ben.paypal")
+      group = Group.create(name: "Spec Group")
+      debtor_membership = GroupMembership.create(group_id: group.id, user_id: debtor_user.id, name: "Anna")
+      creditor_membership = GroupMembership.create(group_id: group.id, user_id: creditor_user.id, name: "Ben")
+
+      Expense.create(
+        group_id: group.id,
+        group_membership_id: creditor_membership.id,
+        weight_template_id: nil,
+        description: "Dinner",
+        amount: 1200
+      )
+
+      response_io = IO::Memory.new
+      ctx = Crumble::Server::TestRequestContext.new(
+        resource: GroupPage.uri_path(group_id: group.id),
+        method: "GET",
+        response_io: response_io
+      )
+      ctx.session.update!(user_id: debtor_user.id.value)
+      GroupPage.handle(ctx).should be_true
+      ctx.response.status_code.should eq(200)
+      ctx.response.close
+      response_io.rewind
+      html = response_io.to_s
+
+      html.includes?("Bezahlt!").should be_true
+      html.includes?("Mit PayPal senden").should be_true
+      html.includes?("href=\"https://paypal.me/ben.paypal/6.00EUR\"").should be_true
+      html.includes?("target=\"_blank\"").should be_true
+      Reimbursement.where(group_id: group.id).count.should eq(0)
     end
   end
 end

@@ -860,6 +860,7 @@ class Group < ApplicationRecord
   css_class ExpensesSummaryAmount
   css_class ExpensesSummaryPayForm
   css_class ExpensesSummaryPayButton
+  css_class ExpensesSummaryPaypalButton
   css_class ExpensesSummaryTotal
   css_class ReimbursementCard
   css_class ReimbursementCardHeader
@@ -959,7 +960,7 @@ class Group < ApplicationRecord
       margin 0.px
     end
 
-    rule ExpensesSummaryPayButton do
+    rule ExpensesSummaryPayButton, ExpensesSummaryPaypalButton do
       padding 7.px, 14.px
       border 1.px, :solid, "#1c5fd4"
       border_radius 999.px
@@ -969,6 +970,13 @@ class Group < ApplicationRecord
       font_size 0.9.rem
       font_weight :bold
       white_space :nowrap
+    end
+
+    rule ExpensesSummaryPaypalButton do
+      display :inline_block
+      background_color "#ffc439"
+      border_color "#ffc439"
+      color "#111820"
     end
 
     rule ExpensesContainer do
@@ -1136,7 +1144,14 @@ class Group < ApplicationRecord
                       value: debt.creditor_id
                     )
                     button ExpensesSummaryPayButton, type: :submit do
-                      "Ausgleichen"
+                      "Bezahlt!"
+                    end
+                  end
+                  if creditor_user_id = creditor.user_id_value
+                    if paypal_username = User.find(creditor_user_id).paypal_username.try(&.value)
+                      a ExpensesSummaryPaypalButton, href: "https://paypal.me/#{URI.encode_path(paypal_username)}/#{amount_input_value(debt.amount_cents)}EUR", target: "_blank", rel: "noopener noreferrer" do
+                        "Mit PayPal senden"
+                      end
                     end
                   end
                 end
