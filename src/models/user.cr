@@ -3,6 +3,7 @@ require "./group_membership"
 
 class User < ApplicationRecord
   column name : String?
+  column paypal_username : String?
   column created_at : Time
   column updated_at : Time
 
