@@ -278,32 +278,11 @@ class Group < ApplicationRecord
     css_class CreateOfflineMemberError
 
     form do
-      field name : String
-
-      def valid?
-        super
-
-        errors = @errors.not_nil!
-        if (value = name) && value.strip.empty?
-          errors << NAME_FIELD
+      field name : String, allow_blank: false, label: nil, attrs: [::Group::CreateOfflineMemberAction::CreateOfflineMemberInput, {placeholder: "Name", required: true}] do
+        after_submit do |value|
+          value.strip
         end
-
-        errors.none?
       end
-
-      def normalized_name : String?
-        name.try(&.strip)
-      end
-
-      ToHtml.instance_template do
-        input CreateOfflineMemberInput, type: :text, name: NAME_FIELD, value: name.to_s, placeholder: "Name", required: true
-      end
-    end
-
-    @submitted_form : Form? = nil
-
-    def form
-      @submitted_form || Form.new(ctx, name: "")
     end
 
     before do
@@ -319,15 +298,12 @@ class Group < ApplicationRecord
         return
       end
 
-      @submitted_form = Form.from_www_form(ctx, body.gets_to_end)
-      form = @submitted_form.not_nil!
-
       unless form.valid?
         ctx.response.status = :unprocessable_entity
         return
       end
 
-      new_name = form.normalized_name
+      new_name = form.name
       return unless new_name
 
       GroupMembership.create(group_id: model.id, name: new_name)

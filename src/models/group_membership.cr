@@ -13,6 +13,7 @@ class GroupMembership < ApplicationRecord
     Group.find(group_id)
   end
 
+  # TODO: Remove this once Orma::Attributes properly support comparisons in both directions.
   def user_id_value : Int64?
     user_id.try(&.value)
   end
