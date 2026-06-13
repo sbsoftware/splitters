@@ -80,7 +80,7 @@ class GroupMembership < ApplicationRecord
 
         errors = @errors.not_nil!
         if (value = name) && value.strip.empty?
-          errors << "name"
+          errors << {:name, "name"}
         end
 
         errors.none?

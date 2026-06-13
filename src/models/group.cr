@@ -184,7 +184,7 @@ class Group < ApplicationRecord
 
         errors = @errors.not_nil!
         if (value = name) && value.strip.empty?
-          errors << NAME_FIELD
+          errors << {:name, NAME_FIELD}
         end
 
         errors.none?
@@ -297,7 +297,7 @@ class Group < ApplicationRecord
 
         errors = @errors.not_nil!
         if (value = name) && value.strip.empty?
-          errors << "name"
+          errors << {:name, "name"}
         end
 
         errors.none?
