@@ -65,8 +65,33 @@ module ExpenseSpec
       body.includes?("Snacks").should be_true
       body.includes?("bezahlt von").should be_true
       body.includes?("Anna").should be_true
+      body.includes?(ExpenseDetailsPage.uri_path(group.id, expense.id)).should be_true
       body.includes?(Expense::DeleteFromCardAction.uri_path(expense.id.value)).should be_true
       body.includes?(">delete<").should be_true
+    end
+
+    it "calculates member balances for a single equally weighted expense" do
+      payer_user = User.create
+      group = Group.create(name: "Spec Group")
+      payer_membership = GroupMembership.create(group_id: group.id, user_id: payer_user.id, name: "Anna")
+      member_2 = GroupMembership.create(group_id: group.id, name: "Ben")
+      member_3 = GroupMembership.create(group_id: group.id, name: "Clara")
+      member_4 = GroupMembership.create(group_id: group.id, name: "Dora")
+      template = WeightTemplate.create(group_id: group.id, name: WeightTemplate::DEFAULT_NAME, membership_weight: 10)
+
+      expense = Expense.create(
+        group_id: group.id,
+        group_membership_id: payer_membership.id,
+        weight_template_id: template.id,
+        description: "Dinner",
+        amount: 10000
+      )
+
+      balances = expense.member_balances(group.group_memberships.to_a)
+      balances[payer_membership.id.value].should eq(-7500)
+      balances[member_2.id.value].should eq(2500)
+      balances[member_3.id.value].should eq(2500)
+      balances[member_4.id.value].should eq(2500)
     end
 
     it "deletes the expense for an authorized user and refreshes summary and card views" do

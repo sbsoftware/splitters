@@ -29,6 +29,8 @@ class Expense < ApplicationRecord
     end
 
     rule ExpenseWeightTemplateLine do
+      position :relative
+      z_index 2
       display :flex
       align_items :center
       gap 8.px
@@ -116,6 +118,27 @@ class Expense < ApplicationRecord
 
   def effective_weight_template_id(fallback_id : Int64?) : Int64?
     weight_template_id.try(&.value) || fallback_id
+  end
+
+  def member_balances(memberships : Array(GroupMembership) = group.group_memberships.to_a) : Hash(Int64, Int32)
+    member_weights = memberships.to_h { |membership| {membership.id.value, membership.weight.value} }
+    balances = Hash(Int64, Int32).new(0)
+    member_weights.each_key { |member_id| balances[member_id] = 0 }
+
+    if template_id = effective_weight_template_id(group.default_weight_template.try(&.id.value))
+      WeightTemplateMembership.where(weight_template_id: template_id).each do |template_membership|
+        member_id = template_membership.group_membership_id.value
+        next unless member_weights.has_key?(member_id)
+
+        member_weights[member_id] = template_membership.weight.value
+      end
+    end
+
+    MinimumCashFlow.split_amount_by_weight(amount.value, member_weights).each do |member_id, member_share|
+      balances[member_id] += member_share
+    end
+    balances[group_membership_id.value] -= amount.value
+    balances
   end
 
   model_action :delete_from_card, {group.expenses_view, group.expenses_summary_view} do
