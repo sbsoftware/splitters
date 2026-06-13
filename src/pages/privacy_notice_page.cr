@@ -1,6 +1,4 @@
 class PrivacyNoticePage < ApplicationPage
-  css_class PrivacyNoticeView
-
   template do
     Crumble::Material::TopAppBar.new(
       leading_icon: Crumble::Material::NavigationDrawer::MenuSwitch,
@@ -9,7 +7,7 @@ class PrivacyNoticePage < ApplicationPage
       type: :center_aligned
     )
 
-    div PrivacyNoticeView do
+    div ApplicationStyle::TextView do
       h2 do
         "1. Datenschutz auf einen Blick"
       end
@@ -385,12 +383,6 @@ class PrivacyNoticePage < ApplicationPage
         "Die bei der Registrierung erfassten Daten werden von uns gespeichert, solange Sie auf dieser Website registriert sind und werden anschlie&szlig;end gel&ouml;scht. "
         "Gesetzliche Aufbewahrungsfristen bleiben unber&uuml;hrt."
       end
-    end
-  end
-
-  style do
-    rule PrivacyNoticeView do
-      padding 16.px
     end
   end
 end

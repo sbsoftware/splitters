@@ -1,4 +1,6 @@
 style ApplicationStyle do
+  css_class TextView
+
   rule body, button, input do
     font_family "Roboto"
   end
@@ -24,5 +26,14 @@ style ApplicationStyle do
     border :none
     outline :none
     background_color :transparent
+  end
+
+  rule TextView do
+    margin_left 16.px
+    margin_right 16.px
+
+    rule a do
+      text_decoration :underline
+    end
   end
 end
