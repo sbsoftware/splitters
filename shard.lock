@@ -10,7 +10,7 @@ shards:
 
   crumble:
     git: https://github.com/sbsoftware/crumble.git
-    version: 0.30.0
+    version: 0.31.3
 
   crumble-crababel:
     git: https://github.com/sbsoftware/crumble-crababel.git
