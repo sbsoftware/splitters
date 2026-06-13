@@ -5,12 +5,21 @@ require "./weight_template_membership"
 
 class GroupMembership < ApplicationRecord
   column group_id : Int64
-  column user_id : Int64
+  column user_id : Int64?
   column name : String?
   column weight : Int32 = 10
 
   def group
     Group.find(group_id)
+  end
+
+  # TODO: Remove this once Orma::Attributes properly support comparisons in both directions.
+  def user_id_value : Int64?
+    user_id.try(&.value)
+  end
+
+  def offline? : Bool
+    user_id_value.nil?
   end
 
   def display_name : String
@@ -104,7 +113,7 @@ class GroupMembership < ApplicationRecord
     end
 
     def editable? : Bool
-      ctx.session.user_id == model.user_id.value
+      ctx.session.user_id == model.user_id_value
     end
 
     before do
@@ -131,7 +140,9 @@ class GroupMembership < ApplicationRecord
       return unless new_name
 
       model.update(name: new_name)
-      User.find(model.user_id).update(name: new_name)
+      if user_id = model.user_id_value
+        User.find(user_id).update(name: new_name)
+      end
       model.name_prompt_box.refresh!
       model.group.expenses_summary_view.refresh!
     end
@@ -280,7 +291,7 @@ class GroupMembership < ApplicationRecord
       can_submit do
         return false unless user_id = ctx.session.user_id
 
-        return false unless model.group.group_memberships.any? { |membership| membership.user_id == user_id }
+        return false unless model.group.group_memberships.any? { |membership| membership.user_id_value == user_id }
 
         # Keep historic accounting intact by disallowing removal once
         # expenses or reimbursements reference this membership.
@@ -308,7 +319,7 @@ class GroupMembership < ApplicationRecord
         return
       end
 
-      if ctx.session.user_id == model.user_id.value
+      if ctx.session.user_id == model.user_id_value
         redirect HomePage.uri_path
       end
     end

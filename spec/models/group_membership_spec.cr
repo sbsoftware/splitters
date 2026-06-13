@@ -76,6 +76,27 @@ module GroupMembershipSpec
       body.includes?("data-model-template-id=\"Group##{group.id.value}-members_list_view\"").should be_true
     end
 
+    it "removes an offline member with the same policy as online members" do
+      remover_user = User.create
+      group = Group.create(name: "Spec Group")
+      WeightTemplate.create(group_id: group.id, name: "Standard")
+      GroupMembership.create(group_id: group.id, user_id: remover_user.id, name: "Anna")
+      target_membership = GroupMembership.create(group_id: group.id, name: "Ben")
+
+      response_io = IO::Memory.new
+      ctx = Crumble::Server::TestRequestContext.new(
+        method: "POST",
+        resource: GroupMembership::RemoveFromGroupAction.uri_path(target_membership.id.value),
+        response_io: response_io
+      )
+      ctx.session.update!(user_id: remover_user.id.value)
+
+      GroupMembership::RemoveFromGroupAction.handle(ctx).should be_true
+      ctx.response.status_code.should eq(200)
+      GroupMembership.where(id: target_membership.id).first?.should be_nil
+      WeightTemplateMembership.where(group_membership_id: target_membership.id).first?.should be_nil
+    end
+
     it "rejects removal when the member has expenses" do
       remover_user = User.create
       target_user = User.create

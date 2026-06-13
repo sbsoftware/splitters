@@ -14,6 +14,12 @@ class Expense < ApplicationRecord
   css_class ExpenseWeightTemplateButton
   css_class ExpenseWeightTemplateButtonActive
 
+  css_class BalanceList
+  css_class BalanceRow
+  css_class BalanceName
+  css_class BalanceAmount
+  css_class BalanceAmountNegative
+
   css_class ExpenseDeleteCardAction
   css_class ExpenseDeleteCardButton
   css_class ExpenseDeleteError
@@ -29,6 +35,8 @@ class Expense < ApplicationRecord
     end
 
     rule ExpenseWeightTemplateLine do
+      position :relative
+      z_index 2
       display :flex
       align_items :center
       gap 8.px
@@ -56,6 +64,37 @@ class Expense < ApplicationRecord
 
     rule ExpenseWeightTemplateButtonActive do
       background_color "#cfe8ff"
+    end
+
+    rule BalanceList do
+      display :flex
+      flex_direction :column
+      gap 8.px
+    end
+
+    rule BalanceRow do
+      display :flex
+      justify_content :space_between
+      align_items :center
+      gap 12.px
+      padding 10.px, 12.px
+      border 1.px, :solid, "#dce2ee"
+      border_radius 8.px
+      background_color :white
+    end
+
+    rule BalanceName do
+      font_weight :bold
+    end
+
+    rule BalanceAmount do
+      font_weight :bold
+      color "#2f5a33"
+      white_space :nowrap
+    end
+
+    rule BalanceAmountNegative do
+      color "#8f1f1f"
     end
 
     rule ExpenseDeleteCardAction do
@@ -118,6 +157,46 @@ class Expense < ApplicationRecord
     weight_template_id.try(&.value) || fallback_id
   end
 
+  def member_balances(memberships : Array(GroupMembership) = group.group_memberships.to_a) : Hash(Int64, Int32)
+    member_weights = memberships.to_h { |membership| {membership.id.value, membership.weight.value} }
+    balances = Hash(Int64, Int32).new(0)
+    member_weights.each_key { |member_id| balances[member_id] = 0 }
+
+    if template_id = effective_weight_template_id(group.default_weight_template.try(&.id.value))
+      WeightTemplateMembership.where(weight_template_id: template_id).each do |template_membership|
+        member_id = template_membership.group_membership_id.value
+        next unless member_weights.has_key?(member_id)
+
+        member_weights[member_id] = template_membership.weight.value
+      end
+    end
+
+    MinimumCashFlow.split_amount_by_weight(amount.value, member_weights).each do |member_id, member_share|
+      balances[member_id] += member_share
+    end
+    balances[group_membership_id.value] -= amount.value
+    balances
+  end
+
+  model_template :balance_list do
+    memberships = group.group_memberships.to_a
+    balances = member_balances(memberships)
+
+    div BalanceList do
+      memberships.each do |membership|
+        balance = balances[membership.id.value]
+        div BalanceRow do
+          span BalanceName do
+            membership.display_name
+          end
+          span BalanceAmount, (BalanceAmountNegative if balance < 0) do
+            "#{balance < 0 ? "-" : ""}#{group.format_euros(balance.abs)} €"
+          end
+        end
+      end
+    end
+  end
+
   model_action :delete_from_card, {group.expenses_view, group.expenses_summary_view} do
     @delete_error_message : String? = nil
 
@@ -125,7 +204,7 @@ class Expense < ApplicationRecord
       can_submit do
         return false unless user_id = ctx.session.user_id
 
-        model.group_membership.user_id.value == user_id
+        model.group_membership.user_id_value == user_id
       end
 
       can_view do
@@ -164,7 +243,7 @@ class Expense < ApplicationRecord
     end
   end
 
-  model_action :set_weight_template, {group.expenses_view, group.expenses_summary_view} do
+  model_action :set_weight_template, {group.expenses_view, group.expenses_summary_view, balance_list} do
     TEMPLATE_FIELD = "weight_template_id"
 
     form do
@@ -176,7 +255,7 @@ class Expense < ApplicationRecord
 
     before do
       return 403 unless user_id = ctx.session.user_id
-      return 403 unless model.group.group_memberships.any? { |gm| gm.user_id == user_id }
+      return 403 unless model.group.group_memberships.any? { |gm| gm.user_id_value == user_id }
 
       true
     end
