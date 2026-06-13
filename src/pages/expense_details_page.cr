@@ -133,6 +133,9 @@ class ExpenseDetailsPage < ApplicationPage
       end
 
       rule DetailsCard do
+        width 100.percent
+        max_width 360.px
+        margin 0.px, :auto
         margin_bottom 16.px
       end
 

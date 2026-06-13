@@ -61,13 +61,6 @@ class Expense < ApplicationRecord
       background_color "#cfe8ff"
     end
 
-    rule ExpenseDetailsLink do
-      position :absolute
-      inset 0.px
-      z_index 1
-      border_radius 4.px
-    end
-
     rule ExpenseDeleteCardAction do
       position :absolute
       top 12.px

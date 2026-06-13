@@ -1003,6 +1003,13 @@ class Group < ApplicationRecord
       end
     end
 
+    rule Expense::ExpenseDetailsLink do
+      position :absolute
+      inset 0.px
+      z_index 1
+      border_radius 4.px
+    end
+
     rule ReimbursementCard do
       position :relative
 
