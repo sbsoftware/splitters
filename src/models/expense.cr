@@ -14,6 +14,12 @@ class Expense < ApplicationRecord
   css_class ExpenseWeightTemplateButton
   css_class ExpenseWeightTemplateButtonActive
 
+  css_class BalanceList
+  css_class BalanceRow
+  css_class BalanceName
+  css_class BalanceAmount
+  css_class BalanceAmountNegative
+
   css_class ExpenseDeleteCardAction
   css_class ExpenseDeleteCardButton
   css_class ExpenseDeleteError
@@ -58,6 +64,37 @@ class Expense < ApplicationRecord
 
     rule ExpenseWeightTemplateButtonActive do
       background_color "#cfe8ff"
+    end
+
+    rule BalanceList do
+      display :flex
+      flex_direction :column
+      gap 8.px
+    end
+
+    rule BalanceRow do
+      display :flex
+      justify_content :space_between
+      align_items :center
+      gap 12.px
+      padding 10.px, 12.px
+      border 1.px, :solid, "#dce2ee"
+      border_radius 8.px
+      background_color :white
+    end
+
+    rule BalanceName do
+      font_weight :bold
+    end
+
+    rule BalanceAmount do
+      font_weight :bold
+      color "#2f5a33"
+      white_space :nowrap
+    end
+
+    rule BalanceAmountNegative do
+      color "#8f1f1f"
     end
 
     rule ExpenseDeleteCardAction do
@@ -141,6 +178,25 @@ class Expense < ApplicationRecord
     balances
   end
 
+  model_template :balance_list do
+    memberships = group.group_memberships.to_a
+    balances = member_balances(memberships)
+
+    div BalanceList do
+      memberships.each do |membership|
+        balance = balances[membership.id.value]
+        div BalanceRow do
+          span BalanceName do
+            membership.display_name
+          end
+          span BalanceAmount, (BalanceAmountNegative if balance < 0) do
+            "#{balance < 0 ? "-" : ""}#{group.format_euros(balance.abs)} €"
+          end
+        end
+      end
+    end
+  end
+
   model_action :delete_from_card, {group.expenses_view, group.expenses_summary_view} do
     @delete_error_message : String? = nil
 
@@ -187,7 +243,7 @@ class Expense < ApplicationRecord
     end
   end
 
-  model_action :set_weight_template, {group.expenses_view, group.expenses_summary_view} do
+  model_action :set_weight_template, {group.expenses_view, group.expenses_summary_view, balance_list} do
     TEMPLATE_FIELD = "weight_template_id"
 
     form do
