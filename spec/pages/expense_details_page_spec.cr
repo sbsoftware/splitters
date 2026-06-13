@@ -10,6 +10,7 @@ describe ExpenseDetailsPage do
     GroupMembership.create(group_id: group.id, name: "Clara")
     GroupMembership.create(group_id: group.id, name: "Dora")
     template = WeightTemplate.create(group_id: group.id, name: WeightTemplate::DEFAULT_NAME, membership_weight: 10)
+    other_template = WeightTemplate.create(group_id: group.id, name: "Vacation", membership_weight: 10)
 
     expense = Expense.create(
       group_id: group.id,
@@ -38,11 +39,39 @@ describe ExpenseDetailsPage do
     body.includes?("bezahlt von").should be_true
     body.includes?("Anna").should be_true
     body.includes?(WeightTemplate::DEFAULT_NAME).should be_true
+    body.includes?(other_template.name.value).should be_true
+    body.includes?(Expense::SetWeightTemplateAction.uri_path(expense.id.value)).should be_true
+    body.includes?("data-model-template-id=\"Expense##{expense.id.value}-balance_list\"").should be_true
     body.includes?("-75,00 €").should be_true
     body.includes?("25,00 €").should be_true
     body.includes?("Ben").should be_true
     body.includes?("Clara").should be_true
     body.includes?("Dora").should be_true
+  end
+
+  it "refreshes the balance list when changing the weight template" do
+    user = User.create
+    group = Group.create(name: "Spec Group")
+    membership = GroupMembership.create(group_id: group.id, user_id: user.id, name: "Anna")
+    WeightTemplate.create(group_id: group.id, name: WeightTemplate::DEFAULT_NAME)
+    other_template = WeightTemplate.create(group_id: group.id, name: "Vacation")
+    expense = Expense.create(group_id: group.id, group_membership_id: membership.id, weight_template_id: nil, description: "Dinner", amount: 10000)
+
+    response_io = IO::Memory.new
+    ctx = Crumble::Server::TestRequestContext.new(
+      resource: Expense::SetWeightTemplateAction.uri_path(expense.id.value),
+      method: "POST",
+      body: URI::Params.encode({Expense::SetWeightTemplateAction::TEMPLATE_FIELD => other_template.id.value.to_s}),
+      response_io: response_io
+    )
+    ctx.session.update!(user_id: user.id.value)
+
+    Expense::SetWeightTemplateAction.handle(ctx).should be_true
+    ctx.response.status_code.should eq(200)
+    ctx.response.close
+
+    Expense.find(expense.id).weight_template_id.try(&.value).should eq(other_template.id.value)
+    response_io.to_s.includes?("data-model-template-id=\"Expense##{expense.id.value}-balance_list\"").should be_true
   end
 
   it "redirects non-members away from expense details" do
