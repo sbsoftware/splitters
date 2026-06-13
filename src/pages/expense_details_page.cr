@@ -94,15 +94,9 @@ class ExpenseDetailsPage < ApplicationPage
               end
             end
             Crumble::Material::Card::SecondaryText.new.to_html do
-              div MetaLine do
+              div Expense::ExpenseWeightTemplateLine do
                 Crumble::Material::Icon.new("balance")
-                span do
-                  if template_id = expense.effective_weight_template_id(group.default_weight_template.try(&.id.value))
-                    WeightTemplate.find(template_id).name
-                  else
-                    "Keine Gewichtung"
-                  end
-                end
+                expense.set_weight_template_action_template(ctx)
               end
             end
           end

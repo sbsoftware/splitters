@@ -10,6 +10,7 @@ describe ExpenseDetailsPage do
     GroupMembership.create(group_id: group.id, name: "Clara")
     GroupMembership.create(group_id: group.id, name: "Dora")
     template = WeightTemplate.create(group_id: group.id, name: WeightTemplate::DEFAULT_NAME, membership_weight: 10)
+    other_template = WeightTemplate.create(group_id: group.id, name: "Vacation", membership_weight: 10)
 
     expense = Expense.create(
       group_id: group.id,
@@ -38,6 +39,8 @@ describe ExpenseDetailsPage do
     body.includes?("bezahlt von").should be_true
     body.includes?("Anna").should be_true
     body.includes?(WeightTemplate::DEFAULT_NAME).should be_true
+    body.includes?(other_template.name.value).should be_true
+    body.includes?(Expense::SetWeightTemplateAction.uri_path(expense.id.value)).should be_true
     body.includes?("-75,00 €").should be_true
     body.includes?("25,00 €").should be_true
     body.includes?("Ben").should be_true
