@@ -869,6 +869,7 @@ class Group < ApplicationRecord
   css_class ReimbursementCardFlow
   css_class ReimbursementCardMeta
   css_class ExpenseCardDescription
+  css_class ExpenseDetailsLink
 
   style do
     EXPENSE_CARD_MIN_WIDTH  = 360.px
@@ -1003,7 +1004,7 @@ class Group < ApplicationRecord
       end
     end
 
-    rule Expense::ExpenseDetailsLink do
+    rule ExpenseDetailsLink do
       position :absolute
       inset 0.px
       z_index 1
@@ -1176,7 +1177,7 @@ class Group < ApplicationRecord
         if entry.is_a?(Expense)
           expense = entry.as(Expense)
           div Expense::ExpenseCard do
-            a Expense::ExpenseDetailsLink, href: ExpenseDetailsPage.uri_path(id, expense.id), title: "Ausgabendetails"
+            a ExpenseDetailsLink, href: ExpenseDetailsPage.uri_path(id, expense.id), title: "Ausgabendetails"
             expense.delete_from_card_action_template(ctx)
             Crumble::Material::Card.new.to_html do
               amount = format_euros(expense.amount.value)

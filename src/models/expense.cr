@@ -13,7 +13,6 @@ class Expense < ApplicationRecord
   css_class ExpenseWeightTemplateButtons
   css_class ExpenseWeightTemplateButton
   css_class ExpenseWeightTemplateButtonActive
-  css_class ExpenseDetailsLink
 
   css_class ExpenseDeleteCardAction
   css_class ExpenseDeleteCardButton
