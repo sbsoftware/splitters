@@ -3,6 +3,21 @@ require "crumble/spec/test_request_context"
 
 module GroupMembershipSpec
   describe GroupMembership do
+    it "rejects name updates from another user" do
+      user = User.create
+      other_user = User.create
+      group = Group.create(name: "Spec Group")
+      membership = GroupMembership.create(group_id: group.id, user_id: user.id, name: "Anna")
+      body = URI::Params.encode({"name" => "Changed"})
+      ctx = Crumble::Server::TestRequestContext.new(method: "POST", resource: GroupMembership::UpdateNameAction.uri_path(membership.id.value), body: body)
+      ctx.session.update!(user_id: other_user.id.value)
+
+      GroupMembership::UpdateNameAction.handle(ctx).should be_true
+
+      ctx.response.status_code.should eq(403)
+      GroupMembership.find(membership.id).name.try(&.value).should eq("Anna")
+    end
+
     it "shows remove action only for removable members and hides it otherwise" do
       remover_user = User.create
       target_user = User.create

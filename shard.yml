@@ -15,7 +15,7 @@ license: MIT
 dependencies:
   crumble-turbo:
     github: sbsoftware/crumble-turbo
-    version: "~> 0.18.0"
+    version: "~> 0.19.0"
   crumble:
     github: sbsoftware/crumble
     version: "~> 0.31.0"

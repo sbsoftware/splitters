@@ -261,18 +261,6 @@ class Expense < ApplicationRecord
     end
 
     controller do
-      unless body = ctx.request.body
-        ctx.response.status = :bad_request
-        return
-      end
-
-      form = begin
-        Form.from_www_form(ctx, body.gets_to_end)
-      rescue Exception
-        ctx.response.status = :unprocessable_entity
-        return
-      end
-
       unless form.valid?
         ctx.response.status = :unprocessable_entity
         return
