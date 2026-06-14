@@ -29,7 +29,7 @@ class Reimbursement < ApplicationRecord
       can_submit do
         return false unless user_id = ctx.session.user_id
 
-        model.payer_membership.user_id.value == user_id
+        model.payer_membership.user_id_value == user_id
       end
 
       can_view do

@@ -10,7 +10,7 @@ class GroupWeightTemplatesPage < ApplicationPage
     end
 
     current_group = group.not_nil!
-    unless current_group.group_memberships.any? { |gm| gm.user_id == user.id }
+    unless current_group.group_memberships.any? { |gm| gm.user_id_value == user.id.value }
       redirect HomePage.uri_path
       return 303
     end

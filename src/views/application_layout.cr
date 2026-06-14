@@ -26,6 +26,7 @@ class ApplicationLayout < Crumble::Material::Layout
 
   def drawer_items
     [
+      DrawerLink.new("Settings", SettingsPage.uri_path),
       DrawerLink.new("Legal notice", LegalNoticePage.uri_path),
       DrawerLink.new("Privacy notice", PrivacyNoticePage.uri_path),
     ]
