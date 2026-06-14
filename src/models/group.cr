@@ -177,7 +177,7 @@ class Group < ApplicationRecord
     css_class CreateTemplateButton
 
     form do
-      field name : String
+      field name : String = ""
 
       def valid?
         super
@@ -199,12 +199,6 @@ class Group < ApplicationRecord
       end
     end
 
-    @submitted_form : Form? = nil
-
-    def form
-      @submitted_form || Form.new(ctx, name: "")
-    end
-
     before do
       return 403 unless user_id = ctx.session.user_id
       return 403 unless model.group_memberships.any? { |gm| gm.user_id == user_id }
@@ -213,14 +207,6 @@ class Group < ApplicationRecord
     end
 
     controller do
-      unless body = ctx.request.body
-        ctx.response.status = :bad_request
-        return
-      end
-
-      @submitted_form = Form.from_www_form(ctx, body.gets_to_end)
-      form = @submitted_form.not_nil!
-
       unless form.valid?
         ctx.response.status = :unprocessable_entity
         return
@@ -290,7 +276,7 @@ class Group < ApplicationRecord
     end
 
     form do
-      field name : String
+      field name : String = model.name.value
 
       def valid?
         super
@@ -314,12 +300,6 @@ class Group < ApplicationRecord
       end
     end
 
-    @submitted_form : Form? = nil
-
-    def form
-      @submitted_form || Form.new(ctx, name: model.name.value)
-    end
-
     def show_form? : Bool
       if errors = form.errors
         errors.any?
@@ -337,14 +317,6 @@ class Group < ApplicationRecord
     end
 
     controller do
-      unless body = ctx.request.body
-        ctx.response.status = :bad_request
-        return
-      end
-
-      @submitted_form = Form.from_www_form(ctx, body.gets_to_end)
-      form = @submitted_form.not_nil!
-
       unless form.valid?
         ctx.response.status = :unprocessable_entity
         return
@@ -462,12 +434,6 @@ class Group < ApplicationRecord
       field amount : Float64, attrs: {required: true, step: ".01"}
     end
 
-    @submitted_form : Form? = nil
-
-    def form
-      @submitted_form || Form.new(ctx)
-    end
-
     def current_group_membership : GroupMembership?
       return nil unless user_id = ctx.session.user_id
 
@@ -477,19 +443,6 @@ class Group < ApplicationRecord
     end
 
     controller do
-      unless body = ctx.request.body
-        ctx.response.status = :bad_request
-        return
-      end
-
-      @submitted_form = begin
-        Form.from_www_form(ctx, body.gets_to_end)
-      rescue Exception
-        ctx.response.status = :unprocessable_entity
-        return
-      end
-      form = @submitted_form.not_nil!
-
       unless form.valid?
         ctx.response.status = :unprocessable_entity
         return
@@ -569,33 +522,19 @@ class Group < ApplicationRecord
     AMOUNT_FIELD    = "amount"
     RECIPIENT_FIELD = "recipient_membership_id"
 
-    include Crumble::Crababel
-
     form do
-      @recipient_options : Array(Tuple(String, String)) = [] of Tuple(String, String)
-
       field amount : Float64, attrs: {required: true, step: ".01"}
       field recipient_membership_id : Int64, type: :select, options: recipient_options, attrs: {required: true}
 
       def recipient_options : Array(Tuple(String, String))
-        @recipient_options
-      end
+        current_user_id = ctx.session.user_id
+        options = [{"", t.recipient_membership_id_prompt}] of Tuple(String, String)
+        model.group_memberships.each do |membership|
+          next if current_user_id && membership.user_id == current_user_id
 
-      def recipient_options=(options : Array(Tuple(String, String)))
-        @recipient_options = options
-      end
-    end
-
-    @submitted_form : Form? = nil
-
-    def form
-      options = build_recipient_options
-
-      if submitted_form = @submitted_form
-        submitted_form.recipient_options = options
-        submitted_form
-      else
-        Form.new(ctx, recipient_options: options)
+          options << {membership.id.value.to_s, membership.display_name}
+        end
+        options
       end
     end
 
@@ -607,38 +546,7 @@ class Group < ApplicationRecord
       end
     end
 
-    def build_recipient_options : Array(Tuple(String, String))
-      memberships = model.group_memberships.to_a
-      current_user_id = ctx.session.user_id
-      recipient_memberships = if current_user_id
-                                memberships.reject { |membership| membership.user_id == current_user_id }
-                              else
-                                memberships
-                              end
-
-      options = [{"", t.form.recipient_membership_id_prompt}] of Tuple(String, String)
-      recipient_memberships.each do |membership|
-        options << {membership.id.value.to_s, membership.display_name}
-      end
-
-      options
-    end
-
     controller do
-      unless body = ctx.request.body
-        ctx.response.status = :bad_request
-        return
-      end
-
-      @submitted_form = begin
-        Form.from_www_form(ctx, body.gets_to_end)
-      rescue Exception
-        ctx.response.status = :unprocessable_entity
-        return
-      end
-      form = @submitted_form.not_nil!
-      form.recipient_options = build_recipient_options
-
       unless form.valid?
         ctx.response.status = :unprocessable_entity
         return
