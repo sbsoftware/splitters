@@ -39,7 +39,7 @@ module Groups
           controller = Groups::MembersListView::NameEditorController
           Crumble::Material::ListItem.to_html do
             div controller, HideNameForm do
-              if action.editable?
+              if action.policy.can_submit?
                 div MemberRow, EditableMemberRow do
                   Crumble::Material::Icon.new("account_circle")
                   span Name do

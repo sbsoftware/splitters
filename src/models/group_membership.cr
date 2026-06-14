@@ -97,14 +97,10 @@ class GroupMembership < ApplicationRecord
       end
     end
 
-    def editable? : Bool
-      ctx.session.user_id == model.user_id.value
-    end
-
-    before do
-      return 403 unless editable?
-
-      true
+    policy do
+      can_submit do
+        ctx.session.user_id == model.user_id.value
+      end
     end
 
     controller do
