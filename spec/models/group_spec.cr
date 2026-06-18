@@ -54,6 +54,11 @@ module GroupSpec
       html.includes?(Group::CreateOfflineMemberAction.uri_path(group.id.value)).should be_true
       html.includes?("Offline").should be_true
       html.includes?("Ben").should be_true
+      html.includes?(">Ben</div><span class=\"#{Groups::MembersListView::OfflineBadge}\">Offline</span>").should be_true
+
+      style = Groups::MembersListView::Style.to_s
+      style.includes?(".#{Groups::MembersListView::MemberRow} {\n  display: flex;\n  gap: 8px;\n  align-items: center;").should be_true
+      style.includes?(".#{Groups::MembersListView::Name} {\n  display: flex;\n  flex-grow: 2;\n  gap: 8px;\n  align-items: center;").should be_true
     end
 
     it "rejects offline member creation from outsiders" do
