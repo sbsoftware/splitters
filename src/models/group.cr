@@ -481,7 +481,7 @@ class Group < ApplicationRecord
     access_view do
       css_class Container
 
-      ToHtml.instance_template do
+      template do
         div Container do
           p do
             "Du wurdest eingeladen, an der Gruppe "
