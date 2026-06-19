@@ -10,30 +10,28 @@ class SettingsPage < ApplicationPage
     true
   end
 
-  view do
-    css_class SettingsView
+  css_class SettingsView
 
-    def user : User
-      ctx.session.user.not_nil!
+  def user : User
+    ctx.session.user.not_nil!
+  end
+
+  template do
+    Crumble::Material::TopAppBar.new(
+      leading_icon: Crumble::Material::NavigationDrawer::MenuSwitch,
+      headline: "Settings",
+      trailing_icons: [] of Nil,
+      type: :center_aligned
+    )
+
+    div SettingsView do
+      user.update_paypal_username_action_template(ctx)
     end
+  end
 
-    ToHtml.instance_template do
-      Crumble::Material::TopAppBar.new(
-        leading_icon: Crumble::Material::NavigationDrawer::MenuSwitch,
-        headline: "Settings",
-        trailing_icons: [] of Nil,
-        type: :center_aligned
-      )
-
-      div SettingsView do
-        user.update_paypal_username_action_template(ctx)
-      end
-    end
-
-    style do
-      rule SettingsView do
-        padding 16.px
-      end
+  style do
+    rule SettingsView do
+      padding 16.px
     end
   end
 end

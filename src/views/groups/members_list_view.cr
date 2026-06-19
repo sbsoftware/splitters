@@ -41,7 +41,7 @@ module Groups
           controller = Groups::MembersListView::NameEditorController
           Crumble::Material::ListItem.to_html do
             div controller, HideNameForm do
-              if action.editable?
+              if action.policy.can_submit?
                 div MemberRow, EditableMemberRow do
                   Crumble::Material::Icon.new("account_circle")
                   span Name do
@@ -98,6 +98,7 @@ module Groups
       rule MemberRow do
         display :flex
         gap 8.px
+        align_items :center
       end
 
       rule EditableMemberRow do
@@ -108,7 +109,10 @@ module Groups
       end
 
       rule Name do
+        display :flex
         flex_grow 2
+        gap 8.px
+        align_items :center
       end
 
       rule NameButton do
@@ -123,28 +127,20 @@ module Groups
 
       rule YouBadge do
         display :inline_block
-        margin_left 8.px
         padding 2.px, 6.px
         border_radius 999.px
         font_size 12.px
         line_height 1.2
-        vertical_align :middle
-        position :relative
-        top -2.px
         background_color "#d7e2ff"
         color "#2a3a74"
       end
 
       rule OfflineBadge do
         display :inline_block
-        margin_left 8.px
         padding 2.px, 6.px
         border_radius 999.px
         font_size 12.px
         line_height 1.2
-        vertical_align :middle
-        position :relative
-        top -2.px
         background_color "#ece7d9"
         color "#4c4330"
       end

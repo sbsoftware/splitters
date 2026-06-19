@@ -82,14 +82,14 @@ class GroupMembership < ApplicationRecord
     css_class ErrorMessage
 
     form do
-      field name : String
+      field name : String = model.name.try(&.value) || ""
 
       def valid?
         super
 
         errors = @errors.not_nil!
         if (value = name) && value.strip.empty?
-          errors << "name"
+          errors << {:name, "name"}
         end
 
         errors.none?
@@ -106,31 +106,13 @@ class GroupMembership < ApplicationRecord
       end
     end
 
-    @submitted_form : Form? = nil
-
-    def form
-      @submitted_form || Form.new(ctx, name: model.name.try(&.value) || "")
-    end
-
-    def editable? : Bool
-      ctx.session.user_id == model.user_id_value
-    end
-
-    before do
-      return 403 unless editable?
-
-      true
+    policy do
+      can_submit do
+        ctx.session.user_id == model.user_id_value
+      end
     end
 
     controller do
-      unless body = ctx.request.body
-        ctx.response.status = :bad_request
-        return
-      end
-
-      @submitted_form = Form.from_www_form(ctx, body.gets_to_end)
-      form = @submitted_form.not_nil!
-
       unless form.valid?
         ctx.response.status = :unprocessable_entity
         return
@@ -221,25 +203,18 @@ class GroupMembership < ApplicationRecord
   end
 
   model_action :set_weight, set_weight_form do
-    WEIGHT_FIELD = "weight"
+    form do
+      field weight : Float64, attrs: {step: "0.1"}
+
+      ToHtml.instance_template do
+      end
+    end
 
     controller do
-      unless body = ctx.request.body
-        ctx.response.status = :bad_request
-        return
-      end
+      return unless form.valid?
+      return unless weight = form.weight
 
-      weight = nil
-      HTTP::Params.parse(body.gets_to_end) do |key, value|
-        case key
-        when WEIGHT_FIELD
-          weight = (value.to_f * 10).to_i
-        end
-      rescue Exception
-        weight = nil
-      end
-
-      return unless weight_value = weight
+      weight_value = (weight * 10).to_i
       return if weight_value < 0
 
       GroupMembership.transaction do
@@ -264,7 +239,7 @@ class GroupMembership < ApplicationRecord
 
       template do
         form UpdateController, action: action.uri_path, method: "POST" do
-          input UpdateController.update_action("change"), type: :number, name: WEIGHT_FIELD, value: model.weight / 10.0, step: "0.1"
+          input UpdateController.update_action("change"), type: :number, name: "weight", value: model.weight / 10.0, step: "0.1"
           "x"
           button Hidden, UpdateController.submit_target
         end

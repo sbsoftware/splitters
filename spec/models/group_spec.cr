@@ -56,6 +56,26 @@ module GroupSpec
       html.includes?("Ben").should be_true
     end
 
+    it "renders the shared access page" do
+      group = Group.create(name: "Spec Group", access_token: "SpecGroupToken1")
+
+      response_io = IO::Memory.new
+      ctx = Crumble::Server::TestRequestContext.new(
+        method: "GET",
+        resource: Group::AccessPage.uri_path(access_token: group.access_token.value),
+        response_io: response_io
+      )
+
+      Group::AccessPage.handle(ctx).should be_true
+      ctx.response.status_code.should eq(200)
+      ctx.response.close
+      html = response_io.to_s
+
+      html.includes?("Du wurdest eingeladen").should be_true
+      html.includes?("Spec Group").should be_true
+      html.includes?(Group::AcceptAccessAction.uri_path(group.id.value)).should be_true
+    end
+
     it "rejects offline member creation from outsiders" do
       member_user = User.create
       outsider_user = User.create

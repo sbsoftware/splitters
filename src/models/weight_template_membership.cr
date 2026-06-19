@@ -20,25 +20,18 @@ class WeightTemplateMembership < ApplicationRecord
   end
 
   model_action :set_weight, set_weight_form do
-    WEIGHT_FIELD = "weight"
+    form do
+      field weight : Float64, attrs: {step: "0.1"}
+
+      ToHtml.instance_template do
+      end
+    end
 
     controller do
-      unless body = ctx.request.body
-        ctx.response.status = :bad_request
-        return
-      end
+      return unless form.valid?
+      return unless weight = form.weight
 
-      weight = nil
-      HTTP::Params.parse(body.gets_to_end) do |key, value|
-        case key
-        when WEIGHT_FIELD
-          weight = (value.to_f * 10).to_i
-        end
-      rescue Exception
-        weight = nil
-      end
-
-      return unless weight_value = weight
+      weight_value = (weight * 10).to_i
       return if weight_value < 0
 
       WeightTemplateMembership.transaction do
@@ -65,7 +58,7 @@ class WeightTemplateMembership < ApplicationRecord
 
       template do
         form UpdateController, action: action.uri_path, method: "POST" do
-          input UpdateController.update_action("change"), type: :number, name: WEIGHT_FIELD, value: model.weight / 10.0, step: "0.1"
+          input UpdateController.update_action("change"), type: :number, name: "weight", value: model.weight / 10.0, step: "0.1"
           "x"
           button Hidden, UpdateController.submit_target
         end

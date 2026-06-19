@@ -10,7 +10,7 @@ shards:
 
   crumble:
     git: https://github.com/sbsoftware/crumble.git
-    version: 0.30.0
+    version: 0.31.3
 
   crumble-crababel:
     git: https://github.com/sbsoftware/crumble-crababel.git
@@ -22,7 +22,7 @@ shards:
 
   crumble-orma:
     git: https://github.com/sbsoftware/crumble-orma.git
-    version: 0.4.0
+    version: 0.5.0
 
   crumble-stimulus:
     git: https://github.com/sbsoftware/crumble-stimulus.git
@@ -30,7 +30,7 @@ shards:
 
   crumble-turbo:
     git: https://github.com/sbsoftware/crumble-turbo.git
-    version: 0.18.1
+    version: 0.19.2
 
   crygen:
     git: https://github.com/tamdaz/crygen.git

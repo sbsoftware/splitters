@@ -9,27 +9,25 @@ class GroupMembersPage < ApplicationPage
     end
   end
 
-  view do
-    class BackLink
-      getter group : Group
+  template do
+    Crumble::Material::TopAppBar.new(
+      leading_icon: BackLink.new(group),
+      headline: "Teilnehmer",
+      trailing_icons: [] of Nil,
+      type: :center_aligned
+    )
+    group.members_list_view.renderer(ctx)
+  end
 
-      def initialize(@group); end
+  class BackLink
+    getter group : Group
 
-      ToHtml.instance_template do
-        a href: GroupPage.uri_path(group_id: group.id) do
-          Crumble::Material::Icon.new("arrow_back")
-        end
+    def initialize(@group); end
+
+    ToHtml.instance_template do
+      a href: GroupPage.uri_path(group_id: group.id) do
+        Crumble::Material::Icon.new("arrow_back")
       end
-    end
-
-    template do
-      Crumble::Material::TopAppBar.new(
-        leading_icon: BackLink.new(group),
-        headline: "Teilnehmer",
-        trailing_icons: [] of Nil,
-        type: :center_aligned
-      )
-      group.members_list_view.renderer(ctx)
     end
   end
 end
