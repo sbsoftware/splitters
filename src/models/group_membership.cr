@@ -13,13 +13,8 @@ class GroupMembership < ApplicationRecord
     Group.find(group_id)
   end
 
-  # TODO: Remove this once Orma::Attributes properly support comparisons in both directions.
-  def user_id_value : Int64?
-    user_id.try(&.value)
-  end
-
   def offline? : Bool
-    user_id_value.nil?
+    user_id.try(&.value).nil?
   end
 
   def display_name : String
@@ -108,7 +103,7 @@ class GroupMembership < ApplicationRecord
 
     policy do
       can_submit do
-        ctx.session.user_id == model.user_id_value
+        model.user_id == ctx.session.user_id
       end
     end
 
@@ -122,7 +117,7 @@ class GroupMembership < ApplicationRecord
       return unless new_name
 
       model.update(name: new_name)
-      if user_id = model.user_id_value
+      if user_id = model.user_id.try(&.value)
         User.find(user_id).update(name: new_name)
       end
       model.name_prompt_box.refresh!
@@ -266,7 +261,7 @@ class GroupMembership < ApplicationRecord
       can_submit do
         return false unless user_id = ctx.session.user_id
 
-        return false unless model.group.group_memberships.any? { |membership| membership.user_id_value == user_id }
+        return false unless model.group.group_memberships.any? { |membership| membership.user_id == user_id }
 
         # Keep historic accounting intact by disallowing removal once
         # expenses or reimbursements reference this membership.
@@ -294,7 +289,7 @@ class GroupMembership < ApplicationRecord
         return
       end
 
-      if ctx.session.user_id == model.user_id_value
+      if model.user_id == ctx.session.user_id
         redirect HomePage.uri_path
       end
     end

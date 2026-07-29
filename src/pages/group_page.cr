@@ -10,7 +10,7 @@ class GroupPage < ApplicationPage
     end
 
     current_group = group.not_nil!
-    membership = current_group.group_memberships.find { |gm| gm.user_id_value == user.id.value }
+    membership = current_group.group_memberships.find { |gm| gm.user_id == user.id.value }
     unless membership
       redirect HomePage.uri_path
       return 303

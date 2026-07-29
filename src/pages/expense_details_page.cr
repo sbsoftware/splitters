@@ -11,7 +11,7 @@ class ExpenseDetailsPage < ApplicationPage
     end
 
     current_group = group.not_nil!
-    unless current_group.group_memberships.any? { |membership| membership.user_id_value == user.id.value }
+    unless current_group.group_memberships.any? { |membership| membership.user_id == user.id.value }
       redirect HomePage.uri_path
       return 303
     end

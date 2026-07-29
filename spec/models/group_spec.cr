@@ -24,7 +24,7 @@ module GroupSpec
       ctx.response.status_code.should eq(200)
 
       offline_membership = GroupMembership.where(group_id: group.id, name: "Ben").first.not_nil!
-      offline_membership.user_id_value.should be_nil
+      offline_membership.user_id.try(&.value).should be_nil
       offline_membership.offline?.should be_true
       WeightTemplateMembership.where(group_membership_id: offline_membership.id).count.should eq(2)
 

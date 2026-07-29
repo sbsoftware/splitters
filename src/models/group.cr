@@ -201,7 +201,7 @@ class Group < ApplicationRecord
 
     before do
       return 403 unless user_id = ctx.session.user_id
-      return 403 unless model.group_memberships.any? { |gm| gm.user_id_value == user_id }
+      return 403 unless model.group_memberships.any? { |gm| gm.user_id == user_id }
 
       true
     end
@@ -273,7 +273,7 @@ class Group < ApplicationRecord
 
     before do
       return 403 unless user_id = ctx.session.user_id
-      return 403 unless model.group_memberships.any? { |gm| gm.user_id_value == user_id }
+      return 403 unless model.group_memberships.any? { |gm| gm.user_id == user_id }
 
       true
     end
@@ -402,7 +402,7 @@ class Group < ApplicationRecord
     before do
       return 403 unless user_id = ctx.session.user_id
 
-      return 403 unless model.group_memberships.any? { |gm| gm.user_id_value == user_id }
+      return 403 unless model.group_memberships.any? { |gm| gm.user_id == user_id }
 
       true
     end
@@ -529,7 +529,7 @@ class Group < ApplicationRecord
       return nil unless user_id = ctx.session.user_id
 
       model.group_memberships.find do |group_membership|
-        group_membership.user_id_value == user_id
+        group_membership.user_id == user_id
       end
     end
 
@@ -633,7 +633,7 @@ class Group < ApplicationRecord
       return nil unless user_id = ctx.session.user_id
 
       model.group_memberships.find do |group_membership|
-        group_membership.user_id_value == user_id
+        group_membership.user_id == user_id
       end
     end
 
@@ -1024,7 +1024,7 @@ class Group < ApplicationRecord
             "Alle sind ausgeglichen."
           end
         else
-          current_membership_id = memberships.find { |membership| membership.user_id_value == ctx.session.user_id }.try(&.id.value)
+          current_membership_id = memberships.find { |membership| membership.user_id == ctx.session.user_id }.try(&.id.value)
           div ExpensesSummaryList do
             debt_entries.each do |debt|
               debtor = membership_by_id[debt.debtor_id]
@@ -1063,7 +1063,7 @@ class Group < ApplicationRecord
                       "Bezahlt!"
                     end
                   end
-                  if creditor_user_id = creditor.user_id_value
+                  if creditor_user_id = creditor.user_id.try(&.value)
                     if paypal_username = User.find(creditor_user_id).paypal_username.try(&.value)
                       a ExpensesSummaryPaypalButton, href: "https://paypal.me/#{URI.encode_path(paypal_username)}/#{amount_input_value(debt.amount_cents)}EUR", target: "_blank", rel: "noopener noreferrer" do
                         "Mit PayPal senden"
