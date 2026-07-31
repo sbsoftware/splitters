@@ -1,7 +1,6 @@
 require "spec"
-require "crumble"
+require "hot-crumble"
 require "sqlite3"
-require "orma"
 
 ENV["ORMA_CONTINUOUS_MIGRATION"] ||= "true"
 
